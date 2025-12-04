@@ -1,22 +1,3 @@
-
-
-"""
-Feature engineering pipeline for credit-risk project.
-
-Steps:
-1. Load cleaned_loan_data.csv produced by clean_data.py.
-2. Separate features (X) and target (status); drop the id column.
-3. One-hot encode categorical variables.
-4. Standardize numerical variables with StandardScaler.
-5. Create an 80/10/10 train/validation/test split (stratified by status).
-6. Fit all preprocessing ONLY on the training split and transform val/test.
-7. Apply SMOTE to the (already transformed) training set to balance classes.
-8. Save train/val/test splits with the transformed features + target to:
-   - ./data/train.csv
-   - ./data/val.csv
-   - ./data/test.csv
-"""
-
 import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
