@@ -1,0 +1,20 @@
+{
+    "architecture": "Input \u2192 128 \u2192 64 \u2192 32 \u2192 1",
+    "dropout": 0.3,
+    "batch_size": 512,
+    "learning_rate": 0.001,
+    "max_epochs": 50,
+    "patience": 5,
+    "validation_metrics": {
+        "auc_roc": 0.8815217637041233,
+        "auc_pr": 0.8294514719136492,
+        "brier_score": 0.11009558299749195,
+        "dataset": "Validation"
+    },
+    "test_metrics": {
+        "auc_roc": 0.8917019336874442,
+        "auc_pr": 0.8411794035870989,
+        "brier_score": 0.10745629599812974,
+        "dataset": "Test"
+    }
+}
