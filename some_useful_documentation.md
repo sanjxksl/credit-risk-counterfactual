@@ -44,11 +44,13 @@ Trains logistic regression with 5-fold cross-validation.
 **Performance:** Validation AUC-ROC = 0.8418
 
 ### mlp_training.ipynb
-Trains 4-layer neural network with batch normalization, gradient clipping, and learning rate scheduling.
+Trains deep residual neural network with batch normalization, focal loss, and advanced optimization.
 
+**Architecture:** ResNet-style with 4 residual blocks
+**Features:** Focal Loss, AdamW optimizer, Cosine Annealing schedule
 **Input:** Train/val/test datasets
 **Output:** `models/mlp_model.pth`, `results/mlp_predictions.csv`, `results/mlp_metrics.json`
-**Performance:** Validation AUC-ROC = 0.8849, Test AUC-ROC = 0.8943
+**Performance:** Validation AUC-ROC = 0.8854, Test AUC-ROC = 0.8962
 
 ### model_evaluation.ipynb
 Compares models with visualizations and performance metrics.
