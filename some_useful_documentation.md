@@ -44,18 +44,18 @@ Trains logistic regression with 5-fold cross-validation.
 **Performance:** Validation AUC-ROC = 0.8418
 
 ### mlp_training.ipynb
-Trains 3-layer neural network with early stopping.
+Trains 4-layer neural network with batch normalization, gradient clipping, and learning rate scheduling.
 
 **Input:** Train/val/test datasets
 **Output:** `models/mlp_model.pth`, `results/mlp_predictions.csv`, `results/mlp_metrics.json`
-**Performance:** Validation AUC-ROC = 0.8815
+**Performance:** Validation AUC-ROC = 0.8849, Test AUC-ROC = 0.8943
 
 ### model_evaluation.ipynb
 Compares models with visualizations and performance metrics.
 
 **Input:** Model predictions and metrics
 **Output:** `results/model_comparison.csv`, comparison plots
-**Result:** MLP outperforms logistic regression by 4%
+**Result:** MLP outperforms logistic regression by 5%
 
 ## Data Flow
 

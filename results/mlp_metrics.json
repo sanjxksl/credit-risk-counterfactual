@@ -1,20 +1,22 @@
 {
-    "architecture": "Input \u2192 128 \u2192 64 \u2192 32 \u2192 1",
-    "dropout": 0.3,
-    "batch_size": 512,
-    "learning_rate": 0.001,
-    "max_epochs": 50,
-    "patience": 5,
+    "architecture": "Input \u2192 256 \u2192 128 \u2192 64 \u2192 32 \u2192 1 (with BatchNorm)",
+    "dropout": "0.4 \u2192 0.4 \u2192 0.3 \u2192 0.2",
+    "batch_size": 256,
+    "learning_rate": 0.002,
+    "weight_decay": 0.0001,
+    "max_epochs": 100,
+    "patience": 10,
+    "gradient_clipping": 1.0,
     "validation_metrics": {
-        "auc_roc": 0.8815217637041233,
-        "auc_pr": 0.8294514719136492,
-        "brier_score": 0.11009558299749195,
+        "auc_roc": 0.8848805436355749,
+        "auc_pr": 0.8327692660548479,
+        "brier_score": 0.09503305959916189,
         "dataset": "Validation"
     },
     "test_metrics": {
-        "auc_roc": 0.8917019336874442,
-        "auc_pr": 0.8411794035870989,
-        "brier_score": 0.10745629599812974,
+        "auc_roc": 0.8942849228041303,
+        "auc_pr": 0.842379741358666,
+        "brier_score": 0.09166418968483334,
         "dataset": "Test"
     }
 }
