@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import List
 
 import joblib
 import matplotlib.pyplot as plt
@@ -17,7 +18,7 @@ FEATURE_NAMES_PATH = MODELS_DIR / "feature_names.txt"
 TOP_FEATURES_PATH = RESULTS_DIR / "top_features.csv"
 
 
-def load_feature_names(path: Path) -> list[str]:
+def load_feature_names(path: Path) -> List[str]:
     if not path.exists():
         raise FileNotFoundError(f"Feature names file not found at {path}")
     with path.open() as f:
@@ -27,7 +28,7 @@ def load_feature_names(path: Path) -> list[str]:
     return names
 
 
-def compute_feature_importance(model, feature_names: list[str]) -> pd.DataFrame:
+def compute_feature_importance(model, feature_names: List[str]) -> pd.DataFrame:
     coefficients = model.coef_.ravel()
     if len(coefficients) != len(feature_names):
         raise ValueError(
