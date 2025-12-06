@@ -1,0 +1,11 @@
+feature,coefficient,abs_coefficient,effect
+credit_type_EQUI,37.67128487878618,37.67128487878618,increases_risk
+credit_type_EXP,-11.70156401718503,11.70156401718503,decreases_risk
+credit_type_CIB,-11.653939356316451,11.653939356316451,decreases_risk
+credit_type_CRIF,-11.614869733965142,11.614869733965142,decreases_risk
+construction_type_mh,5.310042635095295,5.310042635095295,increases_risk
+security_type_Indriect,5.310042635095295,5.310042635095295,increases_risk
+secured_by_land,5.310042635095295,5.310042635095295,increases_risk
+lump_sum_payment_lpsm,2.6196504786278805,2.6196504786278805,increases_risk
+secured_by_home,-2.6091308638134247,2.6091308638134247,decreases_risk
+construction_type_sb,-2.6091308638134247,2.6091308638134247,decreases_risk
