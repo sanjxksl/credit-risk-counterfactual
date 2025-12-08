@@ -1,465 +1,269 @@
 # Credit Risk Prediction with Counterfactual Explanations
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+## Overview
 
-A production-ready machine learning system for credit risk prediction with explainable AI using counterfactual explanations (DiCE). Achieves **89.6% AUC-ROC** on loan default prediction.
+This project develops a machine learning system for predicting loan default risk using deep neural networks, with a focus on model interpretability through counterfactual explanations. The system achieves 89.6% AUC-ROC on test data and demonstrates strong calibration properties after Platt Scaling.
 
-## Features
+## Problem Statement
 
-- **High-Performance Models**: Deep ResNet MLP achieving 89.6% test AUC-ROC
-- **Explainable AI**: DiCE counterfactual explanations for transparent decision-making
-- **Feature Importance**: Coefficient-based analysis of risk drivers
-- **Comprehensive Evaluation**: ROC curves, calibration plots, precision-recall analysis
-- **Production-Ready**: API endpoints, Docker support, CI/CD pipeline
+Credit risk assessment requires accurate prediction of loan default probability while maintaining fairness across demographic groups and providing actionable explanations for decisions. Traditional models often lack interpretability, making it difficult for applicants to understand rejection reasons or identify paths to approval.
 
-## Quick Start
+## Methodology
 
-### Installation
+### Data Preprocessing
 
-```bash
-# Clone repository
-git clone https://github.com/sanjxksl/credit-risk-counterfactual.git
-cd credit-risk-counterfactual
+The dataset contains 148,670 loan applications with 31 features. Preprocessing steps include:
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+1. Missing value imputation using median for numerical features
+2. Log transformation of skewed continuous variables
+3. One-hot encoding of categorical variables (67 features after encoding)
+4. Standardization using StandardScaler
+5. Train/validation/test split (86%/7%/7%)
+6. SMOTE oversampling on training set to address 24.6% class imbalance
 
-# Install dependencies
-pip install -r requirements.txt
+### Model Architecture
 
-# Install DiCE for counterfactual explanations
-pip install dice-ml
+Deep Residual Multi-Layer Perceptron with the following specifications:
+
+```
+Input Layer: 67 features
+    ↓
+Hidden Layer: 512 units, BatchNorm, ReLU, Dropout(0.5)
+    ↓
+Residual Block 1: 512 units (2 layers with skip connection)
+Residual Block 2: 512 units (2 layers with skip connection)
+    ↓
+Hidden Layer: 256 units, BatchNorm, ReLU, Dropout(0.4)
+    ↓
+Residual Block 3: 256 units (2 layers with skip connection)
+    ↓
+Hidden Layer: 128 units, BatchNorm, ReLU, Dropout(0.3)
+    ↓
+Residual Block 4: 128 units (2 layers with skip connection)
+    ↓
+Hidden Layer: 64 units, BatchNorm, ReLU, Dropout(0.2)
+    ↓
+Output Layer: 1 unit, Sigmoid activation
 ```
 
-### Run Prediction
+Total Parameters: 1,773,569
 
-```bash
-# Run counterfactual explanations
-python dice_setup.py
+### Training Configuration
 
-# Run feature importance analysis
-python feature_importance.py
+- Loss Function: Focal Loss (alpha=0.25, gamma=2.0) to handle class imbalance
+- Optimizer: AdamW with weight decay 5e-5
+- Learning Rate: 0.001 with Cosine Annealing schedule
+- Batch Size: 128
+- Early Stopping: Patience of 15 epochs
+- Gradient Clipping: Maximum norm of 1.0
 
-# Start API server
-python api.py
-```
+### Calibration
 
-### Docker
+Uncalibrated model predictions showed systematic overestimation (42.7% vs actual 24.6%). Platt Scaling was applied using validation set predictions to correct probability estimates:
 
-```bash
-# Build image
-docker build -t credit-risk-model .
+- Uncalibrated: Brier Score 0.126, Calibration Gap 18.0%
+- Calibrated: Brier Score 0.081, Calibration Gap 0.3%
 
-# Run container
-docker run -p 8000:8000 credit-risk-model
-```
+## Results
 
-## Model Performance
+### Model Performance
 
-| Model | Dataset | AUC-ROC | AUC-PR | Brier Score |
-|-------|---------|---------|--------|-------------|
-| **MLP (Best)** | **Test** | **0.8917** | **0.8412** | **0.1075** |
-| MLP | Validation | 0.8815 | 0.8295 | 0.1101 |
-| Logistic Regression | Test | 0.8512 | 0.7800 | 0.1312 |
-| Logistic Regression | Validation | 0.8418 | 0.7709 | 0.1338 |
+| Metric | Validation | Test |
+|--------|-----------|------|
+| AUC-ROC | 0.8854 | 0.8962 |
+| AUC-PR | 0.8322 | 0.8438 |
+| Brier Score (Uncalibrated) | 0.1282 | 0.1262 |
+| Brier Score (Calibrated) | N/A | 0.0812 |
 
-**Key Achievements**:
-- 89.17% test AUC-ROC (top 10% for credit risk models)
-- 4.76% improvement over logistic regression baseline
-- Excellent calibration (Brier score: 0.1075)
-- No overfitting detected (88.15% val → 89.17% test)
+### Bias Analysis
 
-## Architecture
+Comprehensive fairness evaluation across demographic groups:
 
-### MLP Model
-```
-Input (67 features)
-  ↓
-512 units + BatchNorm + ReLU + Dropout(0.5)
-  ↓
-2× Residual Blocks (512 units)
-  ↓
-256 units + BatchNorm + ReLU + Dropout(0.4)
-  ↓
-Residual Block (256 units)
-  ↓
-128 units + BatchNorm + ReLU + Dropout(0.3)
-  ↓
-Residual Block (128 units)
-  ↓
-64 units + BatchNorm + ReLU + Dropout(0.2)
-  ↓
-Output (1 unit) + Sigmoid
-```
+**Gender Fairness:**
+- Calibration gap: Maximum 0.5% across all gender groups
+- Disparate Impact Ratio: 1.015 (passes 80% rule)
+- Equalized Odds: FPR difference 0.004, FNR difference 0.007 (both < 0.1)
 
-**Advanced Techniques**:
-- Residual connections (prevents vanishing gradients)
-- Batch normalization (training stability)
-- Focal loss (handles class imbalance)
-- AdamW optimizer with weight decay
-- Cosine annealing learning rate schedule
-- Early stopping (patience=15)
+**Age Fairness:**
+- Calibration gap: Maximum 1.9% across age groups
+- Disparate Impact Ratio: 1.040 (passes 80% rule)
+- Equalized Odds: FPR difference 0.007, FNR difference 0.010 (both < 0.1)
+
+**Regional Fairness:**
+- AUC consistent across all regions (0.886-0.899)
+- Calibration gap varies (max 6.7% for North-East region with only 109 samples)
+
+### Feature Importance
+
+Top risk drivers identified through logistic regression coefficients:
+
+| Feature | Coefficient | Interpretation |
+|---------|-------------|----------------|
+| credit_type_EQUI | +37.67 | Strongly increases default risk |
+| credit_type_EXP | -11.70 | Strongly decreases default risk |
+| construction_type_mh | +5.31 | Mobile homes increase risk |
+| lump_sum_payment_lpsm | +2.62 | Lump sum payments increase risk |
+| secured_by_home | -2.61 | Home-secured loans decrease risk |
+
+### Counterfactual Explanations
+
+DiCE framework generates actionable recommendations for loan modification. Example for high-risk case:
+
+- Original: Default probability 99.99%
+- Counterfactual 1: Reduce loan amount by $15,000 → 17.6% (approved)
+- Counterfactual 2: Increase down payment by 10% → 16.6% (approved)
+
+Mutable features: loan_amount, income, credit_score, ltv, dtir1, property_value, term
+
+Immutable features: age, gender, region, historical credit data
 
 ## Project Structure
 
 ```
 credit-risk-counterfactual/
-├── data/                           # Data files (gitignored)
-│   ├── Loan_Default.csv           # Original dataset (148K rows)
-│   ├── cleaned_loan_data.csv      # Preprocessed data
-│   ├── train.csv                  # Training set (86%)
-│   ├── val.csv                    # Validation set (7%)
-│   └── test.csv                   # Test set (7%)
-├── models/                         # Trained models (gitignored)
-│   ├── mlp_model.pth              # PyTorch MLP model
-│   ├── logistic_model.pkl         # Scikit-learn logistic regression
-│   ├── preprocessor.pkl           # Feature preprocessing pipeline
-│   └── feature_names.txt          # Feature name mapping
-├── results/                        # Model outputs
-│   ├── figures/                   # Visualizations (ROC, PR, calibration)
-│   ├── dice_counterfactuals/      # Counterfactual explanations
-│   ├── *_predictions.csv          # Model predictions
-│   └── *_metrics.json             # Performance metrics
-├── notebooks/                      # Jupyter notebooks
-│   ├── data_cleaning.ipynb        # Data preprocessing
-│   ├── EDA.ipynb                  # Exploratory data analysis
-│   ├── feature_analysis.ipynb     # Feature importance
-│   ├── mlp_training.ipynb         # Model training
-│   └── model_evaluation.ipynb     # Model comparison
-├── docs/                           # Documentation
-│   ├── feature_importance_notes.md
-│   └── dice_counterfactual_guide.md
-├── tests/                          # Unit tests
-│   ├── test_data_loading.py
-│   ├── test_model_inference.py
-│   └── test_counterfactuals.py
-├── dice_setup.py                   # Counterfactual generation script
-├── feature_importance.py           # Feature importance analysis
-├── api.py                          # FastAPI REST API
-├── requirements.txt                # Python dependencies
-├── Dockerfile                      # Docker configuration
-└── README.md                       # This file
+├── data/
+│   ├── Loan_Default.csv              # Original dataset
+│   ├── cleaned_loan_data.csv          # Preprocessed data
+│   ├── train.csv                      # Training set (86%)
+│   ├── val.csv                        # Validation set (7%)
+│   └── test.csv                       # Test set (7%)
+├── models/
+│   ├── mlp_model.pth                  # Trained neural network
+│   ├── calibrator.pkl                 # Platt Scaling calibrator
+│   ├── preprocessor.pkl               # Feature scaler
+│   └── feature_names.txt              # Feature mapping
+├── results/
+│   ├── mlp_predictions.csv            # Model predictions
+│   ├── mlp_metrics.json               # Performance metrics
+│   ├── bias_analysis.json             # Fairness evaluation
+│   ├── bias_gender.csv                # Gender bias metrics
+│   ├── bias_age.csv                   # Age bias metrics
+│   ├── bias_region.csv                # Regional bias metrics
+│   └── figures/                       # Visualizations
+├── notebooks/
+│   ├── data_cleaning.ipynb            # Data preprocessing
+│   ├── EDA.ipynb                      # Exploratory analysis
+│   ├── feature_analysis.ipynb         # Feature importance
+│   ├── mlp_training.ipynb             # Model training
+│   └── model_evaluation.ipynb         # Performance evaluation
+├── docs/
+│   ├── dice_counterfactual_guide.md   # Counterfactual documentation
+│   └── feature_importance_notes.md    # Feature analysis notes
+├── bias_analysis.py                    # Fairness evaluation script
+├── dice_setup.py                       # Counterfactual generation
+├── evaluation_summary.py               # Results aggregation
+├── feature_importance.py               # Feature analysis
+└── requirements.txt                    # Dependencies
 ```
 
-## Usage Guide
+## Usage
 
-### 1. Data Preprocessing
-
-Run notebooks in order:
+### Installation
 
 ```bash
-jupyter notebook notebooks/data_cleaning.ipynb
-jupyter notebook notebooks/EDA.ipynb
-jupyter notebook notebooks/feature_analysis.ipynb
+git clone https://github.com/sanjxksl/credit-risk-counterfactual.git
+cd credit-risk-counterfactual
+pip install -r requirements.txt
 ```
 
-### 2. Model Training
+### Quick Start - Interactive Demo
+
+For an interactive demonstration with counterfactual explanations:
 
 ```bash
-# Train logistic regression (baseline)
-jupyter notebook notebooks/logistic_regression.ipynb
-
-# Train MLP (best model)
-jupyter notebook notebooks/mlp_training.ipynb
+jupyter notebook SHOWCASE.ipynb
 ```
 
-### 3. Model Evaluation
+This notebook allows you to:
+- Input custom loan application cases
+- Get instant predictions with calibrated probabilities
+- Generate counterfactual recommendations for rejected applications
+- View model performance and fairness metrics
+
+### Analysis Notebooks
+
+Execute notebooks in sequence for complete analysis:
 
 ```bash
-# Compare models and generate visualizations
-jupyter notebook notebooks/model_evaluation.ipynb
+jupyter notebook notebooks/data_cleaning.ipynb       # Data preprocessing
+jupyter notebook notebooks/EDA.ipynb                 # Exploratory analysis
+jupyter notebook notebooks/feature_analysis.ipynb    # Feature importance
+jupyter notebook notebooks/mlp_training.ipynb        # Model training
+jupyter notebook notebooks/model_evaluation.ipynb    # Performance evaluation
 ```
-
-### 4. Counterfactual Explanations
-
-```bash
-# Generate counterfactuals for high-risk cases
-python dice_setup.py
-```
-
-**Output**:
-- `results/dice_counterfactuals/high_risk_cases.csv` - Selected cases
-- `results/dice_counterfactuals/verification_summary.csv` - Flip rates
-- `results/dice_counterfactuals/counterfactuals_case_*.csv` - Alternative scenarios
-
-### 5. Feature Importance
-
-```bash
-# Extract and visualize feature importance
-python feature_importance.py
-```
-
-**Output**:
-- `results/top_features.csv` - Top 10 important features
-- `results/figures/feature_importance.png` - Bar chart visualization
-
-## API Usage
-
-### Start Server
-
-```bash
-# Development
-python api.py
-
-# Production with uvicorn
-uvicorn api:app --host 0.0.0.0 --port 8000
-```
-
-### Make Predictions
-
-```bash
-# Single prediction
-curl -X POST "http://localhost:8000/predict" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "loan_amount": 50000,
-    "income": 75000,
-    "credit_score": 720,
-    "dtir1": 0.35,
-    "ltv": 0.80,
-    ...
-  }'
-
-# Get counterfactuals
-curl -X POST "http://localhost:8000/counterfactuals" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "loan_amount": 50000,
-    "income": 75000,
-    ...
-  }'
-```
-
-### API Documentation
-
-Visit `http://localhost:8000/docs` for interactive API documentation (Swagger UI).
-
-## Counterfactual Explanations
-
-### What are Counterfactuals?
-
-Counterfactual explanations answer: "What minimal changes would flip the prediction?"
-
-**Example**:
-- **Original**: P(default) = 99.99% → Rejected
-- **Counterfactual 1**: Reduce loan amount by $15K → P(default) = 17.64% → Approved ✓
-- **Counterfactual 2**: Increase down payment by 10% → P(default) = 16.64% → Approved ✓
-
-### Mutable Features
-
-Features applicants can change:
-- `loan_amount`: Requested loan amount
-- `income`: Annual income
-- `dtir1`: Debt-to-income ratio
-- `credit_score`: Credit score (improvable)
-- `ltv`: Loan-to-value ratio
-- `property_value`: Property price
-- `term`: Loan term length
-
-### Immutable Features
-
-Features that cannot be changed:
-- Age, gender, region
-- Historical credit bureau data
-- Past delinquencies
-
-## Key Insights
-
-### Top Risk Drivers
-
-| Feature | Coefficient | Effect | Odds Ratio |
-|---------|-------------|--------|------------|
-| `credit_type_EQUI` | +37.67 | Increases risk | 2.29×10¹⁶ |
-| `credit_type_EXP` | -11.70 | Decreases risk | 8.28×10⁻⁶ |
-| `construction_type_mh` | +5.31 | Increases risk | 202.36 |
-| `lump_sum_payment_lpsm` | +2.62 | Increases risk | 13.73 |
-| `secured_by_home` | -2.61 | Decreases risk | 0.074 |
-
-### Actionable Recommendations
-
-To reduce default risk:
-1. **Reduce loan amount** (most impactful)
-2. **Increase down payment** (improve LTV ratio)
-3. **Improve credit score** (pay down debts)
-4. **Choose appropriate loan term**
-5. **Avoid lump-sum payment options**
-
-## Testing
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=. --cov-report=html
-
-# Run specific test file
-pytest tests/test_model_inference.py
-```
-
-## Development
-
-### Code Formatting
-
-```bash
-# Format code
-black *.py
-
-# Check linting
-flake8 *.py
-
-# Type checking
-mypy *.py
-```
-
-### Pre-commit Hooks
-
-```bash
-# Install pre-commit
-pip install pre-commit
-
-# Setup hooks
-pre-commit install
-
-# Run manually
-pre-commit run --all-files
-```
-
-## Dataset
-
-**Source**: Loan Default Dataset from Kaggle
-**Size**: 148,670 samples, 31 features → 67 after encoding
-**Target**: Binary classification (default: 1, no default: 0)
-**Class Distribution**: 24.6% positive (imbalanced)
-**Handling**: SMOTE oversampling on training set
-
-### Features
-
-- **Continuous**: loan_amount, income, credit_score, ltv, dtir1, property_value, term
-- **Categorical**: gender, loan_type, loan_purpose, credit_type, age_group, region, security_type
-- **Binary**: Many one-hot encoded features
 
 ## Dependencies
 
-Core libraries:
-- `torch==2.4.1` - Deep learning framework
-- `scikit-learn==1.3.2` - ML algorithms
-- `pandas==1.5.3` - Data manipulation (downgraded for DiCE)
-- `numpy==1.24.3` - Numerical computing
-- `dice-ml==0.11` - Counterfactual explanations
-- `imbalanced-learn==0.12.4` - SMOTE for class imbalance
-- `matplotlib==3.7.5` - Visualization
-- `seaborn==0.13.2` - Statistical plots
-
-API & Production:
-- `fastapi` - REST API framework
-- `uvicorn` - ASGI server
-- `pydantic` - Data validation
+Core Requirements:
+- Python 3.8+
+- PyTorch 2.4.1
+- scikit-learn 1.3.2
+- pandas 1.5.3
+- numpy 1.24.3
+- dice-ml 0.11
+- imbalanced-learn 0.12.4
+- matplotlib 3.7.5
+- seaborn 0.13.2
 
 See `requirements.txt` for complete list.
 
-## Deployment
+## Key Findings
 
-### Docker Deployment
+1. **Model Performance**: Deep residual architecture with Focal Loss achieves 89.6% AUC-ROC, outperforming logistic regression baseline by 4.8 percentage points.
 
-```bash
-# Build
-docker build -t credit-risk-model:latest .
+2. **Calibration**: Platt Scaling effectively corrects probability estimates, reducing calibration gap from 18.0% to 0.3% while preserving discrimination.
 
-# Run
-docker run -d -p 8000:8000 credit-risk-model:latest
+3. **Fairness**: Model demonstrates excellent fairness properties across gender, age, and regional groups. Passes disparate impact 80% rule and satisfies equalized odds criterion.
 
-# Check logs
-docker logs <container_id>
-```
+4. **Interpretability**: Counterfactual explanations provide actionable recommendations for loan modifications, with average 3-5 feature changes required to flip predictions.
 
-### Cloud Deployment
+5. **Risk Drivers**: Credit bureau type, construction type, and loan structure (lump sum payments) are strongest predictors of default risk.
 
-**AWS**:
-```bash
-# Push to ECR
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-1.amazonaws.com
-docker tag credit-risk-model:latest <account>.dkr.ecr.us-east-1.amazonaws.com/credit-risk-model:latest
-docker push <account>.dkr.ecr.us-east-1.amazonaws.com/credit-risk-model:latest
-```
+## Limitations
 
-**GCP**:
-```bash
-# Push to GCR
-gcloud auth configure-docker
-docker tag credit-risk-model:latest gcr.io/<project-id>/credit-risk-model:latest
-docker push gcr.io/<project-id>/credit-risk-model:latest
-```
+1. Dataset limited to specific time period and geographic region
+2. Some regional groups have small sample sizes (North-East: 109 samples)
+3. Counterfactuals assume feature changes are independent
+4. Model trained on historical data may not capture recent economic conditions
 
-## Contributing
+## Future Work
 
-Contributions welcome! Please:
+1. Incorporate temporal dynamics and macroeconomic indicators
+2. Explore ensemble methods combining multiple architectures
+3. Develop interactive visualization dashboard for counterfactuals
+4. Extend fairness analysis to intersectional groups
+5. Implement model monitoring for performance degradation
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## References
 
-## License
+1. Mothilal, R. K., Sharma, A., & Tan, C. (2020). Explaining machine learning classifiers through diverse counterfactual explanations. In Proceedings of the 2020 Conference on Fairness, Accountability, and Transparency (pp. 607-617).
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+2. Lin, T. Y., Goyal, P., Girshick, R., He, K., & Dollár, P. (2017). Focal loss for dense object detection. In Proceedings of the IEEE international conference on computer vision (pp. 2980-2988).
+
+3. Platt, J. (1999). Probabilistic outputs for support vector machines and comparisons to regularized likelihood methods. Advances in large margin classifiers, 10(3), 61-74.
 
 ## Citation
 
 If you use this project in your research, please cite:
 
 ```bibtex
-@software{credit_risk_counterfactual,
+@software{credit_risk_counterfactual_2025,
   author = {KSL, Sanjana and Jiang, Michael and Xiao, Sharon and Wang, Zhenyu and Zimeng},
   title = {Credit Risk Prediction with Counterfactual Explanations},
   year = {2025},
+  publisher = {GitHub},
   url = {https://github.com/sanjxksl/credit-risk-counterfactual}
 }
 ```
 
-## Acknowledgments
-
-- [DiCE](https://github.com/interpretml/DiCE) for counterfactual explanation framework
-- Kaggle for the Loan Default dataset
-- PyTorch community for deep learning tools
-
 ## Team
 
-This project was developed by:
+- Sanjana KSL
+- Michael Jiang
+- Sharon Xiao
+- Zhenyu Wang
+- Zimeng
 
-- **Sanjana KSL** - [@sanjxksl](https://github.com/sanjxksl)
-- **Michael Jiang** - [@MichaelJiang0528](https://github.com/MichaelJiang0528)
-- **Sharon Xiao** - [@sharxiao](https://github.com/sharxiao)
-- **Zhenyu Wang** - [@ZhenyuWang02](https://github.com/ZhenyuWang02)
-- **Zimeng** - [@Zimeng0713](https://github.com/Zimeng0713)
+## License
 
-## Contact
-
-- **Repository**: [credit-risk-counterfactual](https://github.com/sanjxksl/credit-risk-counterfactual)
-- **Issues**: [GitHub Issues](https://github.com/sanjxksl/credit-risk-counterfactual/issues)
-
-## Roadmap
-
-- [x] Data preprocessing pipeline
-- [x] Baseline logistic regression
-- [x] Advanced MLP with ResNet architecture
-- [x] Feature importance analysis
-- [x] DiCE counterfactual explanations
-- [x] Comprehensive evaluation metrics
-- [x] Documentation
-- [x] FastAPI REST API
-- [x] Docker containerization
-- [ ] Streamlit interactive UI
-- [ ] Model monitoring dashboard
-- [ ] A/B testing framework
-- [ ] Automated retraining pipeline
-
----
-
-**Project Status**: ✅ Production-Ready
-
-**Last Updated**: December 2025
+This project is licensed under the MIT License.
