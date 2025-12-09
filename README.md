@@ -184,7 +184,6 @@ credit-risk-counterfactual/
 │   ├── bias_fairness_analysis.ipynb           # Fairness evaluation
 │   ├── generate_counterfactuals.ipynb         # Counterfactual explanations
 │   └── counterfactual_summary_statistics.ipynb # CF analysis & visualizations
-├── dice_setup.py                               # Counterfactual utilities (used by notebooks)
 └── requirements.txt                            # Dependencies
 ```
 
