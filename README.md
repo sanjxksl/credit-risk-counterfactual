@@ -112,13 +112,35 @@ Top risk drivers identified through logistic regression coefficients:
 Generated counterfactuals for **10 diverse cases** using DiCE framework:
 - **6 high-risk cases** (predicted default): 100% success rate (6/6 cases with actionable counterfactuals)
 - **4 low-risk cases** (predicted no default): 0% flip rate (already approved, counterfactuals not applicable)
-- **5 counterfactuals per case** showing different paths to change predictions
+- **40 total counterfactuals** (4-5 per case) showing different paths to change predictions
 - **Overall flip rate**: 60% (30/50 counterfactuals across all cases)
+
+**Summary Statistics:**
+
+| Metric | Value |
+|--------|-------|
+| Average features changed per CF | 2.33 |
+| Range of features changed | 1-3 |
+| Average magnitude of changes | 9.42 (standardized scale) |
+| Success rate | 100% |
+
+**Most Commonly Changed Features:**
+
+| Feature | Changed in | Impact |
+|---------|-----------|--------|
+| LTV (Loan-to-Value) | 82.5% of CFs | Primary driver for approval |
+| Term | 40.0% of CFs | Loan duration adjustment |
+| Income | 27.5% of CFs | Increasing income improves approval |
+| Property Value | 22.5% of CFs | Higher collateral value |
+| Loan Amount | 22.5% of CFs | Reducing requested amount |
+| DTIR (Debt-to-Income) | 22.5% of CFs | Lowering debt burden |
+| Credit Score | 15.0% of CFs | Improving creditworthiness |
 
 Example for high-risk case (Case 6183, P(default)=83.2%):
 - **Original**: Default probability 83.2% → **REJECTED**
 - **Counterfactuals generated**: 5 scenarios, all successfully flip to approval
-- Changes involve reducing loan amount, increasing income, or improving credit score
+- **Changes required**: Average 2.5 features (typically LTV, income, or property value)
+- **Actionable path**: Reduce LTV ratio by increasing down payment or property value
 
 **Mutable features**: loan_amount, income, credit_score, ltv, dtir1, property_value, term
 
@@ -215,7 +237,7 @@ See `requirements.txt` for complete list.
 
 3. **Fairness**: Model demonstrates excellent fairness properties across gender, age, and regional groups. Passes disparate impact 80% rule and satisfies equalized odds criterion.
 
-4. **Interpretability**: Counterfactual explanations provide actionable recommendations for loan modifications, with average 3-5 feature changes required to flip predictions.
+4. **Interpretability**: Counterfactual explanations provide actionable recommendations for loan modifications. On average, only 2.33 feature changes are required to flip high-risk predictions to approval. LTV ratio is the most critical factor (changed in 82.5% of counterfactuals).
 
 5. **Risk Drivers**: Credit bureau type, construction type, and loan structure (lump sum payments) are strongest predictors of default risk.
 
