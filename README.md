@@ -109,10 +109,12 @@ Top risk drivers identified through logistic regression coefficients:
 
 ### Counterfactual Explanations
 
-Generated counterfactuals for **10 diverse cases** using DiCE framework:
+Generated counterfactuals for **10 diverse cases** using DiCE framework, focusing on **immediately actionable** features. We deliberately excluded `credit_score` and `income` because everyone knows improving these helps loan approval, but applicants cannot change them short-term. The real insight lies in identifying non-obvious changes applicants can make right now.
+
+**Analysis Results:**
 - **6 high-risk cases** (predicted default): 100% success rate (6/6 cases with actionable counterfactuals)
 - **4 low-risk cases** (predicted no default): 0% flip rate (already approved, counterfactuals not applicable)
-- **40 total counterfactuals** (4-5 per case) showing different paths to change predictions
+- **50 total counterfactuals** (5 per case) showing different paths to change predictions
 - **Overall flip rate**: 60% (30/50 counterfactuals across all cases)
 
 **Summary Statistics:**
