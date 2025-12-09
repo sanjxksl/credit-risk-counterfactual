@@ -194,30 +194,29 @@ def define_mutable_features():
     """
     Define which features can be changed (mutable) vs fixed (immutable)
 
-    MUTABLE: Features that applicant can potentially change:
+    MUTABLE: Features that applicant can REALISTICALLY control during loan application:
     - loan_amount: Can request different loan amount
-    - income: Can increase income
-    - dtir1: Debt-to-income ratio (can be improved)
-    - credit_score: Can improve credit score
-    - ltv: Loan-to-value ratio (can change down payment)
     - property_value: Can choose different property
+    - ltv: Loan-to-value ratio (controlled by loan amount & property value)
+    - term: Can choose different loan duration
+    - dtir1: Debt-to-income ratio (can pay down existing debt before applying)
 
-    IMMUTABLE: Features that cannot be changed:
+    IMMUTABLE: Features that cannot be changed or changed quickly:
     - age_* categories: Cannot change age
     - gender_*: Cannot change gender
-    - region_*: Typically fixed
+    - region_*: Unrealistic to move for a loan
     - year: Time-related, cannot change
     - credit_type_*: Historical credit bureau data
+    - credit_score: Takes months/years to improve (NOT actionable for immediate application)
+    - income: Cannot instantly increase (NOT actionable for immediate application)
     """
 
     mutable = [
         'loan_amount',
-        'income',
-        'dtir1',
-        'credit_score',
-        'ltv',
         'property_value',
+        'ltv',
         'term',
+        'dtir1',
     ]
 
     return mutable
