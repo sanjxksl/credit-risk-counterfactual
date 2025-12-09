@@ -165,17 +165,18 @@ credit-risk-counterfactual/
 │   ├── dice_counterfactuals/          # Counterfactual explanations (10 cases)
 │   └── figures/                       # Visualizations
 ├── notebooks/
-│   ├── data_cleaning.ipynb            # Data preprocessing
-│   ├── feature_engineering.ipynb      # Feature transformation & train/test split
-│   ├── EDA.ipynb                      # Exploratory analysis
-│   ├── logistic_training.ipynb        # Logistic regression baseline
-│   ├── feature_analysis.ipynb         # Feature importance
-│   ├── mlp_training.ipynb             # Model training
-│   ├── model_evaluation.ipynb         # Performance evaluation
-│   ├── bias_fairness_analysis.ipynb   # Fairness evaluation
-│   └── generate_counterfactuals.ipynb # Counterfactual explanations
-├── dice_setup.py                       # Counterfactual utilities (used by notebooks)
-└── requirements.txt                    # Dependencies
+│   ├── data_cleaning.ipynb                    # Data preprocessing
+│   ├── feature_engineering.ipynb              # Feature transformation & train/test split
+│   ├── EDA.ipynb                              # Exploratory analysis
+│   ├── logistic_training.ipynb                # Logistic regression baseline
+│   ├── feature_analysis.ipynb                 # Feature importance
+│   ├── mlp_training.ipynb                     # Model training
+│   ├── model_evaluation.ipynb                 # Performance evaluation
+│   ├── bias_fairness_analysis.ipynb           # Fairness evaluation
+│   ├── generate_counterfactuals.ipynb         # Counterfactual explanations
+│   └── counterfactual_summary_statistics.ipynb # CF analysis & visualizations
+├── dice_setup.py                               # Counterfactual utilities (used by notebooks)
+└── requirements.txt                            # Dependencies
 ```
 
 ## Usage
@@ -213,6 +214,7 @@ For detailed step-by-step analysis, explore notebooks in this order:
 7. `notebooks/model_evaluation.ipynb` - Performance evaluation and comparison
 8. `notebooks/bias_fairness_analysis.ipynb` - Fairness evaluation across demographics
 9. `notebooks/generate_counterfactuals.ipynb` - Counterfactual explanations generation
+10. `notebooks/counterfactual_summary_statistics.ipynb` - Comprehensive CF analysis and visualizations
 
 ## Dependencies
 
