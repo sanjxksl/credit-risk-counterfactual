@@ -78,55 +78,61 @@ class ResidualBlock(nn.Module):
 
 class SimpleMLP(nn.Module):
     """ResNet-style MLP for credit risk prediction
-    Architecture: Input → 512 (2x ResBlocks) → 256 (ResBlock) → 128 (ResBlock) → 64 → 1
+    Architecture: Input → 768 (3x ResBlocks) → 384 (2x ResBlocks) → 192 (ResBlock) → 96 (ResBlock) → 1
     """
     def __init__(self, input_dim):
         super(SimpleMLP, self).__init__()
 
-        # Input layer: input_dim → 512
+        # Input layer: input_dim → 768
         self.input_layer = nn.Sequential(
-            nn.Linear(input_dim, 512),
-            nn.BatchNorm1d(512),
+            nn.Linear(input_dim, 768),
+            nn.BatchNorm1d(768),
             nn.ReLU(),
             nn.Dropout(0.5)
         )
 
-        # Two residual blocks at 512 dimensions
-        self.res_block1 = ResidualBlock(512, dropout=0.4)
-        self.res_block2 = ResidualBlock(512, dropout=0.4)
+        # Three residual blocks at 768 dimensions
+        self.res_block1 = ResidualBlock(768, dropout=0.4)
+        self.res_block2 = ResidualBlock(768, dropout=0.4)
+        self.res_block3 = ResidualBlock(768, dropout=0.4)
 
-        # Downsample: 512 → 256
+        # Downsample: 768 → 384
         self.down1 = nn.Sequential(
-            nn.Linear(512, 256),
-            nn.BatchNorm1d(256),
+            nn.Linear(768, 384),
+            nn.BatchNorm1d(384),
             nn.ReLU(),
             nn.Dropout(0.4)
         )
 
-        # Residual block at 256 dimensions
-        self.res_block3 = ResidualBlock(256, dropout=0.3)
+        # Two residual blocks at 384 dimensions
+        self.res_block4 = ResidualBlock(384, dropout=0.35)
+        self.res_block5 = ResidualBlock(384, dropout=0.35)
 
-        # Downsample: 256 → 128
+        # Downsample: 384 → 192
         self.down2 = nn.Sequential(
-            nn.Linear(256, 128),
-            nn.BatchNorm1d(128),
+            nn.Linear(384, 192),
+            nn.BatchNorm1d(192),
             nn.ReLU(),
             nn.Dropout(0.3)
         )
 
-        # Residual block at 128 dimensions
-        self.res_block4 = ResidualBlock(128, dropout=0.2)
+        # Residual block at 192 dimensions
+        self.res_block6 = ResidualBlock(192, dropout=0.3)
 
-        # Final layer: 128 → 64 → 1
+        # Downsample: 192 → 96
         self.down3 = nn.Sequential(
-            nn.Linear(128, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(192, 96),
+            nn.BatchNorm1d(96),
             nn.ReLU(),
-            nn.Dropout(0.2)
+            nn.Dropout(0.25)
         )
 
+        # Residual block at 96 dimensions
+        self.res_block7 = ResidualBlock(96, dropout=0.25)
+
+        # Final layer: 96 → 1
         self.output_layer = nn.Sequential(
-            nn.Linear(64, 1),
+            nn.Linear(96, 1),
             nn.Sigmoid()
         )
 
@@ -134,11 +140,14 @@ class SimpleMLP(nn.Module):
         x = self.input_layer(x)
         x = self.res_block1(x)
         x = self.res_block2(x)
-        x = self.down1(x)
         x = self.res_block3(x)
-        x = self.down2(x)
+        x = self.down1(x)
         x = self.res_block4(x)
+        x = self.res_block5(x)
+        x = self.down2(x)
+        x = self.res_block6(x)
         x = self.down3(x)
+        x = self.res_block7(x)
         x = self.output_layer(x)
         return x
 

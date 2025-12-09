@@ -4,7 +4,7 @@
 
 ## Overview
 
-This project develops a machine learning system for predicting loan default risk using deep neural networks, with a focus on model interpretability through counterfactual explanations. The system achieves 89.6% AUC-ROC on test data and demonstrates strong calibration properties after Platt Scaling.
+This project develops a machine learning system for predicting loan default risk using deep neural networks, with a focus on model interpretability through counterfactual explanations. The system achieves 89.3% AUC-ROC on test data and demonstrates strong calibration properties after Platt Scaling.
 
 ## Problem Statement
 
@@ -61,10 +61,10 @@ Total Parameters: 1,773,569
 
 ### Calibration
 
-Uncalibrated model predictions showed systematic overestimation (42.7% vs actual 24.6%). Platt Scaling was applied using validation set predictions to correct probability estimates:
+Uncalibrated model predictions showed systematic overestimation (48.0% vs actual 24.6%). Platt Scaling was applied using validation set predictions to correct probability estimates:
 
-- Uncalibrated: Brier Score 0.126, Calibration Gap 18.0%
-- Calibrated: Brier Score 0.081, Calibration Gap 0.3%
+- Uncalibrated: Brier Score 0.158, Calibration Gap 23.3%
+- Calibrated: Brier Score 0.083, Calibration Gap 0.2%
 
 ## Results
 
@@ -72,10 +72,10 @@ Uncalibrated model predictions showed systematic overestimation (42.7% vs actual
 
 | Metric | Validation | Test |
 |--------|-----------|------|
-| AUC-ROC | 0.8854 | 0.8962 |
-| AUC-PR | 0.8322 | 0.8438 |
-| Brier Score (Uncalibrated) | 0.1282 | 0.1262 |
-| Brier Score (Calibrated) | N/A | 0.0812 |
+| AUC-ROC | 0.8810 | 0.8934 |
+| AUC-PR | 0.8257 | 0.8418 |
+| Brier Score (Uncalibrated) | 0.1594 | 0.1577 |
+| Brier Score (Calibrated) | 0.0873 | 0.0825 |
 
 ### Bias Analysis
 
@@ -109,16 +109,16 @@ Top risk drivers identified through logistic regression coefficients:
 
 ### Counterfactual Explanations
 
-Generated counterfactuals for **10 diverse high-risk cases** using DiCE framework:
-- **100% success rate** for high-risk predictions (6/6 cases flipped)
-- **60% average flip rate** across all selected cases (30/50 counterfactuals)
-- **5 counterfactuals per case** showing different paths to approval
+Generated counterfactuals for **10 diverse cases** using DiCE framework:
+- **6 high-risk cases** (predicted default): 100% success rate (6/6 cases with actionable counterfactuals)
+- **4 low-risk cases** (predicted no default): 0% flip rate (already approved, counterfactuals not applicable)
+- **5 counterfactuals per case** showing different paths to change predictions
+- **Overall flip rate**: 60% (30/50 counterfactuals across all cases)
 
-Example for high-risk case (Case 6183, P(default)=83%):
+Example for high-risk case (Case 6183, P(default)=83.2%):
 - **Original**: Default probability 83.2% → **REJECTED**
-- **Counterfactual 1**: Reduce loan amount by 15% → 31.1% → **APPROVED** ✓
-- **Counterfactual 2**: Increase income by 20% → 35.6% → **APPROVED** ✓
-- **Counterfactual 3**: Improve credit score by 50 points → 40.7% → **APPROVED** ✓
+- **Counterfactuals generated**: 5 scenarios, all successfully flip to approval
+- Changes involve reducing loan amount, increasing income, or improving credit score
 
 **Mutable features**: loan_amount, income, credit_score, ltv, dtir1, property_value, term
 
@@ -144,14 +144,15 @@ credit-risk-counterfactual/
 │   └── figures/                       # Visualizations
 ├── notebooks/
 │   ├── data_cleaning.ipynb            # Data preprocessing
+│   ├── feature_engineering.ipynb      # Feature transformation & train/test split
 │   ├── EDA.ipynb                      # Exploratory analysis
+│   ├── logistic_training.ipynb        # Logistic regression baseline
+│   ├── feature_analysis.ipynb         # Feature importance
 │   ├── mlp_training.ipynb             # Model training
 │   ├── model_evaluation.ipynb         # Performance evaluation
 │   ├── bias_fairness_analysis.ipynb   # Fairness evaluation
-│   └── counterfactual_explanations.ipynb  # CF analysis
-├── dice_setup.py                       # Counterfactual generation base
-├── generate_counterfactuals_selected.py # CF for 10 selected cases
-├── select_cases.py                     # Diverse case selection
+│   └── generate_counterfactuals.ipynb # Counterfactual explanations
+├── dice_setup.py                       # Counterfactual utilities (used by notebooks)
 └── requirements.txt                    # Dependencies
 ```
 
@@ -172,21 +173,24 @@ jupyter notebook main.ipynb
 ```
 
 `main.ipynb` is your central hub that:
-- Shows model performance summary
+- Shows model performance summary (AUC, calibration, Brier score)
 - Links to all analysis notebooks
-- Runs feature importance, bias analysis, and counterfactual generation
+- Displays feature importance and bias analysis results
+- Shows counterfactual explanations summary
 - Provides interactive prediction demo
-- Displays all results in one place
 
 ### Analysis Notebooks
 
 For detailed step-by-step analysis, explore notebooks in this order:
-1. `notebooks/data_cleaning.ipynb` - Data preprocessing
-2. `notebooks/EDA.ipynb` - Exploratory analysis
-3. `notebooks/mlp_training.ipynb` - Model training
-4. `notebooks/model_evaluation.ipynb` - Performance evaluation
-5. `notebooks/bias_fairness_analysis.ipynb` - Fairness analysis
-6. `notebooks/counterfactual_explanations.ipynb` - CF analysis
+1. `notebooks/data_cleaning.ipynb` - Data preprocessing (missing values, log transform)
+2. `notebooks/feature_engineering.ipynb` - Feature transformation, train/val/test split, SMOTE
+3. `notebooks/EDA.ipynb` - Exploratory data analysis
+4. `notebooks/logistic_training.ipynb` - Logistic regression baseline model
+5. `notebooks/feature_analysis.ipynb` - Feature importance from logistic regression
+6. `notebooks/mlp_training.ipynb` - Deep neural network training
+7. `notebooks/model_evaluation.ipynb` - Performance evaluation and comparison
+8. `notebooks/bias_fairness_analysis.ipynb` - Fairness evaluation across demographics
+9. `notebooks/generate_counterfactuals.ipynb` - Counterfactual explanations generation
 
 ## Dependencies
 
@@ -205,9 +209,9 @@ See `requirements.txt` for complete list.
 
 ## Key Findings
 
-1. **Model Performance**: Deep residual architecture with Focal Loss achieves 89.6% AUC-ROC, outperforming logistic regression baseline by 4.8 percentage points.
+1. **Model Performance**: Deep residual architecture with Focal Loss achieves 89.3% AUC-ROC, outperforming logistic regression baseline.
 
-2. **Calibration**: Platt Scaling effectively corrects probability estimates, reducing calibration gap from 18.0% to 0.3% while preserving discrimination.
+2. **Calibration**: Platt Scaling effectively corrects probability estimates, reducing calibration gap from 23.3% to 0.2% while preserving discrimination.
 
 3. **Fairness**: Model demonstrates excellent fairness properties across gender, age, and regional groups. Passes disparate impact 80% rule and satisfies equalized odds criterion.
 
