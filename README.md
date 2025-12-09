@@ -1,5 +1,7 @@
 # Credit Risk Prediction with Counterfactual Explanations
 
+**Start Here**: Open [`main.ipynb`](main.ipynb) - your central hub for all analyses, results, and project navigation.
+
 ## Overview
 
 This project develops a machine learning system for predicting loan default risk using deep neural networks, with a focus on model interpretability through counterfactual explanations. The system achieves 89.6% AUC-ROC on test data and demonstrates strong calibration properties after Platt Scaling.
@@ -107,90 +109,84 @@ Top risk drivers identified through logistic regression coefficients:
 
 ### Counterfactual Explanations
 
-DiCE framework generates actionable recommendations for loan modification. Example for high-risk case:
+Generated counterfactuals for **10 diverse high-risk cases** using DiCE framework:
+- **100% success rate** for high-risk predictions (6/6 cases flipped)
+- **60% average flip rate** across all selected cases (30/50 counterfactuals)
+- **5 counterfactuals per case** showing different paths to approval
 
-- Original: Default probability 99.99%
-- Counterfactual 1: Reduce loan amount by $15,000 → 17.6% (approved)
-- Counterfactual 2: Increase down payment by 10% → 16.6% (approved)
+Example for high-risk case (Case 6183, P(default)=83%):
+- **Original**: Default probability 83.2% → **REJECTED**
+- **Counterfactual 1**: Reduce loan amount by 15% → 31.1% → **APPROVED** ✓
+- **Counterfactual 2**: Increase income by 20% → 35.6% → **APPROVED** ✓
+- **Counterfactual 3**: Improve credit score by 50 points → 40.7% → **APPROVED** ✓
 
-Mutable features: loan_amount, income, credit_score, ltv, dtir1, property_value, term
+**Mutable features**: loan_amount, income, credit_score, ltv, dtir1, property_value, term
 
-Immutable features: age, gender, region, historical credit data
+**Immutable features**: age, gender, region, historical credit data
 
 ## Project Structure
 
 ```
 credit-risk-counterfactual/
+├── main.ipynb                          # 🎯 START HERE - Central project hub
 ├── data/
-│   ├── Loan_Default.csv              # Original dataset
-│   ├── cleaned_loan_data.csv          # Preprocessed data
-│   ├── train.csv                      # Training set (86%)
-│   ├── val.csv                        # Validation set (7%)
-│   └── test.csv                       # Test set (7%)
+│   ├── train.csv, val.csv, test.csv   # Preprocessed splits
+│   └── high_risk_cases.csv            # Selected cases for analysis
 ├── models/
-│   ├── mlp_model.pth                  # Trained neural network
+│   ├── mlp_model.pth                  # Trained neural network (89.6% AUC)
 │   ├── calibrator.pkl                 # Platt Scaling calibrator
-│   ├── preprocessor.pkl               # Feature scaler
-│   └── feature_names.txt              # Feature mapping
+│   └── preprocessor.pkl               # Feature scaler
 ├── results/
-│   ├── mlp_predictions.csv            # Model predictions
+│   ├── mlp_predictions.csv            # Test set predictions
 │   ├── mlp_metrics.json               # Performance metrics
-│   ├── bias_analysis.json             # Fairness evaluation
-│   ├── bias_gender.csv                # Gender bias metrics
-│   ├── bias_age.csv                   # Age bias metrics
-│   ├── bias_region.csv                # Regional bias metrics
+│   ├── bias_*.csv                     # Fairness analysis results
+│   ├── dice_counterfactuals/          # Counterfactual explanations (10 cases)
 │   └── figures/                       # Visualizations
 ├── notebooks/
 │   ├── data_cleaning.ipynb            # Data preprocessing
 │   ├── EDA.ipynb                      # Exploratory analysis
-│   ├── feature_analysis.ipynb         # Feature importance
 │   ├── mlp_training.ipynb             # Model training
-│   └── model_evaluation.ipynb         # Performance evaluation
-├── docs/
-│   ├── dice_counterfactual_guide.md   # Counterfactual documentation
-│   └── feature_importance_notes.md    # Feature analysis notes
-├── bias_analysis.py                    # Fairness evaluation script
-├── dice_setup.py                       # Counterfactual generation
-├── evaluation_summary.py               # Results aggregation
-├── feature_importance.py               # Feature analysis
+│   ├── model_evaluation.ipynb         # Performance evaluation
+│   ├── bias_fairness_analysis.ipynb   # Fairness evaluation
+│   └── counterfactual_explanations.ipynb  # CF analysis
+├── dice_setup.py                       # Counterfactual generation base
+├── generate_counterfactuals_selected.py # CF for 10 selected cases
+├── select_cases.py                     # Diverse case selection
 └── requirements.txt                    # Dependencies
 ```
 
 ## Usage
 
-### Installation
+### Quick Start
 
+1. **Clone and install**:
 ```bash
 git clone https://github.com/sanjxksl/credit-risk-counterfactual.git
 cd credit-risk-counterfactual
 pip install -r requirements.txt
 ```
 
-### Quick Start - Interactive Demo
-
-For an interactive demonstration with counterfactual explanations:
-
+2. **Open the main hub**:
 ```bash
-jupyter notebook SHOWCASE.ipynb
+jupyter notebook main.ipynb
 ```
 
-This notebook allows you to:
-- Input custom loan application cases
-- Get instant predictions with calibrated probabilities
-- Generate counterfactual recommendations for rejected applications
-- View model performance and fairness metrics
+`main.ipynb` is your central hub that:
+- Shows model performance summary
+- Links to all analysis notebooks
+- Runs feature importance, bias analysis, and counterfactual generation
+- Provides interactive prediction demo
+- Displays all results in one place
 
 ### Analysis Notebooks
 
-Execute notebooks in sequence for complete analysis:
-
-```bash
-jupyter notebook notebooks/data_cleaning.ipynb       # Data preprocessing
-jupyter notebook notebooks/EDA.ipynb                 # Exploratory analysis
-jupyter notebook notebooks/feature_analysis.ipynb    # Feature importance
-jupyter notebook notebooks/mlp_training.ipynb        # Model training
-jupyter notebook notebooks/model_evaluation.ipynb    # Performance evaluation
-```
+For detailed step-by-step analysis, explore notebooks in this order:
+1. `notebooks/data_cleaning.ipynb` - Data preprocessing
+2. `notebooks/EDA.ipynb` - Exploratory analysis
+3. `notebooks/mlp_training.ipynb` - Model training
+4. `notebooks/model_evaluation.ipynb` - Performance evaluation
+5. `notebooks/bias_fairness_analysis.ipynb` - Fairness analysis
+6. `notebooks/counterfactual_explanations.ipynb` - CF analysis
 
 ## Dependencies
 
