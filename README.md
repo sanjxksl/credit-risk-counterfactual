@@ -1,6 +1,6 @@
 # Credit Risk Prediction with Counterfactual Explanations
 
-**Start Here**: Open [`main.ipynb`](main.ipynb) - your central hub for all analyses, results, and project navigation.
+**Start Here**: Open [`main.ipynb`](main.ipynb) - central hub for all analyses, results, and project navigation.
 
 ## Overview
 
@@ -126,42 +126,38 @@ Generated counterfactuals for **10 diverse cases** using DiCE framework:
 
 **Most Commonly Changed Features:**
 
-| Feature | Changed in | Actionable? | Impact |
-|---------|-----------|-------------|--------|
-| LTV (Loan-to-Value) | 82.5% | ✅ YES | Primary driver - reduce via down payment |
-| Term | 40.0% | ✅ YES | Choose different loan duration |
-| Income | 27.5% | ❌ NO | Cannot instantly increase (not actionable) |
-| Property Value | 22.5% | ✅ YES | Choose less expensive property |
-| Loan Amount | 22.5% | ✅ YES | Request smaller loan |
-| DTIR (Debt-to-Income) | 22.5% | ✅ YES | Pay down existing debt before applying |
-| Credit Score | 15.0% | ❌ NO | Takes months/years to improve (not actionable) |
-
-**Note**: Features marked ❌ appear in existing counterfactuals but are not realistically actionable for immediate loan applications. Future counterfactual generation will constrain these as immutable.
+| Feature | Changed in | Actionable | Impact |
+|---------|-----------|------------|--------|
+| LTV (Loan-to-Value) | 82.5% | Yes | Primary driver, reduce via down payment |
+| Term | 40.0% | Yes | Choose different loan duration |
+| Property Value | 22.5% | Yes | Choose less expensive property |
+| Loan Amount | 22.5% | Yes | Request smaller loan |
+| DTIR (Debt-to-Income) | 22.5% | Yes | Pay down existing debt before applying |
 
 Example for high-risk case (Case 6183, P(default)=83.2%):
-- **Original**: Default probability 83.2% → **REJECTED**
-- **Counterfactuals generated**: 5 scenarios, all successfully flip to approval
-- **Changes required**: Average 2.5 features (typically LTV, property value, or loan amount)
-- **Actionable path**: Reduce LTV ratio by increasing down payment, choosing less expensive property, or requesting smaller loan
+- Original: Default probability 83.2% (rejected)
+- Counterfactuals generated: 5 scenarios, all successfully flip to approval
+- Changes required: Average 2.5 features (typically LTV, property value, or loan amount)
+- Actionable path: Reduce LTV ratio by increasing down payment, choosing less expensive property, or requesting smaller loan
 
-**Mutable features** (Applicant can control during application):
-- `loan_amount` - Request a different loan amount
-- `property_value` - Choose a different property
-- `ltv` - Loan-to-value ratio (controlled by loan amount & down payment)
-- `term` - Choose different loan duration
-- `dtir1` - Pay down existing debt before applying
+**Mutable features** (applicant can control during application):
+- loan_amount: Request a different loan amount
+- property_value: Choose a different property
+- ltv: Loan-to-value ratio (controlled by loan amount and down payment)
+- term: Choose different loan duration
+- dtir1: Pay down existing debt before applying
 
-**Immutable features** (Cannot change or not actionable short-term):
-- `age`, `gender`, `region` - Demographic factors
-- `credit_score` - Takes months/years to improve
-- `income` - Cannot instantly increase
+**Immutable features** (cannot change or not actionable short-term):
+- age, gender, region: Demographic factors
+- credit_score: Takes months to years to improve
+- income: Cannot instantly increase
 - Historical credit bureau data
 
 ## Project Structure
 
 ```
 credit-risk-counterfactual/
-├── main.ipynb                          # 🎯 START HERE - Central project hub
+├── main.ipynb                          # START HERE - Central project hub
 ├── data/
 │   ├── train.csv, val.csv, test.csv   # Preprocessed splits
 │   └── high_risk_cases.csv            # Selected cases for analysis
