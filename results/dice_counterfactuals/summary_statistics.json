@@ -3,31 +3,31 @@
   "total_counterfactuals_generated": 46,
   "success_rate": 100.0,
   "features_changed": {
-    "average": 2.260869565217391,
+    "average": 2.217391304347826,
     "median": 2.0,
-    "std": 0.8191932035398596,
+    "std": 0.6888251964241243,
     "min": 1,
     "max": 4
   },
   "magnitude_of_changes": {
-    "average": 12.812895995527635,
-    "median": 8.904953158466736,
-    "std": 11.04930383515737,
+    "average": 2.6842587695739812,
+    "median": 0.4974456327059553,
+    "std": 4.446342336720974,
     "description": "Average absolute change for continuous features (standardized scale)"
   },
   "most_commonly_changed_features": {
-    "ltv": 40,
-    "property_value": 23,
-    "dtir1": 17,
-    "term": 13,
-    "loan_amount": 11
+    "ltv": 27,
+    "dtir1": 26,
+    "term": 25,
+    "property_value": 14,
+    "loan_amount": 10
   },
   "per_case_summary": [
     {
       "case_id": "10242",
       "num_counterfactuals": 4,
       "avg_features_changed": 2.0,
-      "avg_magnitude": 7.946803802535342,
+      "avg_magnitude": 0.39604040650000005,
       "min_features_changed": 2,
       "max_features_changed": 2
     },
@@ -35,15 +35,15 @@
       "case_id": "11660",
       "num_counterfactuals": 4,
       "avg_features_changed": 2.0,
-      "avg_magnitude": 19.16425715098191,
-      "min_features_changed": 1,
-      "max_features_changed": 3
+      "avg_magnitude": 0.5332617232870284,
+      "min_features_changed": 2,
+      "max_features_changed": 2
     },
     {
       "case_id": "11669",
       "num_counterfactuals": 4,
-      "avg_features_changed": 1.5,
-      "avg_magnitude": 24.336139864020762,
+      "avg_features_changed": 1.75,
+      "avg_magnitude": 0.4950838801761409,
       "min_features_changed": 1,
       "max_features_changed": 2
     },
@@ -51,17 +51,17 @@
       "case_id": "12543",
       "num_counterfactuals": 4,
       "avg_features_changed": 2.5,
-      "avg_magnitude": 8.962656030958332,
-      "min_features_changed": 2,
+      "avg_magnitude": 0.4470397375053141,
+      "min_features_changed": 1,
       "max_features_changed": 3
     },
     {
       "case_id": "12844",
       "num_counterfactuals": 4,
-      "avg_features_changed": 3.0,
-      "avg_magnitude": 11.399429758570077,
-      "min_features_changed": 3,
-      "max_features_changed": 3
+      "avg_features_changed": 2.5,
+      "avg_magnitude": 0.8938672268930162,
+      "min_features_changed": 1,
+      "max_features_changed": 4
     },
     {
       "case_id": "13018",
@@ -90,34 +90,34 @@
     {
       "case_id": "14795",
       "num_counterfactuals": 4,
-      "avg_features_changed": 2.5,
-      "avg_magnitude": 8.370092505656952,
+      "avg_features_changed": 2.75,
+      "avg_magnitude": 0.2833923494874911,
       "min_features_changed": 2,
       "max_features_changed": 3
     },
     {
       "case_id": "4680",
       "num_counterfactuals": 4,
-      "avg_features_changed": 2.25,
-      "avg_magnitude": 10.385460776885761,
-      "min_features_changed": 1,
+      "avg_features_changed": 2.5,
+      "avg_magnitude": 0.3057242239931485,
+      "min_features_changed": 2,
       "max_features_changed": 3
     },
     {
       "case_id": "6183",
       "num_counterfactuals": 4,
-      "avg_features_changed": 1.5,
-      "avg_magnitude": 13.236183664274703,
-      "min_features_changed": 1,
-      "max_features_changed": 2
+      "avg_features_changed": 2.25,
+      "avg_magnitude": 0.5809891338694477,
+      "min_features_changed": 2,
+      "max_features_changed": 3
     },
     {
       "case_id": "7433",
       "num_counterfactuals": 4,
-      "avg_features_changed": 3.5,
-      "avg_magnitude": 17.278617563902777,
-      "min_features_changed": 3,
-      "max_features_changed": 4
+      "avg_features_changed": 2.0,
+      "avg_magnitude": 0.6649143376079943,
+      "min_features_changed": 2,
+      "max_features_changed": 2
     },
     {
       "case_id": "8554",

@@ -6,6 +6,7 @@ loan_amount
 income
 property_value
 year
+is_standard_term
 loan_limit_cf
 loan_limit_ncf
 gender_Female
