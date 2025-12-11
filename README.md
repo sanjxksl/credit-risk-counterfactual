@@ -72,6 +72,12 @@ Model predictions showed slight overestimation (27.7% predicted vs 24.6% actual)
 | Brier Score (Calibrated) | 0.0906 | 0.0876 |
 | Calibration Gap (Calibrated) | 0.0% | 0.1% |
 
+### XGBoost Comparison
+
+- Gradient-boosted trees (500 estimators, depth=5, lr=0.05, subsample/colsample=0.8) reach **0.8928 test AUC-ROC** and **0.8384 AUC-PR**, edging out the MLP by +0.005 AUC and +0.008 AUPR.
+- Reliability improves slightly: test Brier score **0.0847** vs **0.0893** for the MLP; Platt scaling trims the calibration gap to **0.11%** (MLP: **0.13%**).
+- Logistic regression remains the speed/interpretability baseline (0.8427 test AUC-ROC), but both boosted trees and the MLP deliver markedly higher ranking quality.
+
 ### Bias Analysis
 
 Comprehensive fairness evaluation across demographic groups using calibrated predictions:
