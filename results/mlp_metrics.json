@@ -1,8 +1,10 @@
 {
     "model": "CreditMLP",
-    "architecture": "67 \u2192 128 \u2192 64 \u2192 32 \u2192 1",
-    "total_parameters": 19649,
-    "loss_function": "Binary Cross-Entropy",
+    "architecture": "56 -> 128 -> 64 -> 32 -> 1",
+    "total_parameters": 18113,
+    "loss_function": "BCEWithLogitsLoss",
+    "pos_weight": 3.057725667953491,
+    "calibration": "Platt Scaling on validation set",
     "optimizer": "Adam",
     "learning_rate": 0.001,
     "weight_decay": 0.0001,
@@ -14,21 +16,16 @@
         0.2,
         0.1
     ],
-    "calibration": "Platt Scaling",
     "validation_metrics": {
-        "auc_roc": 0.8794278021093072,
-        "auc_pr": 0.8208622359429789,
-        "brier_score": 0.0920386977652778,
-        "brier_score_calibrated": 0.09061297530402405,
-        "calibration_gap_uncalibrated": 0.037363600041716044,
-        "calibration_gap_calibrated": 1.1014579099910549e-06
+        "auc_roc": 0.8935468806702196,
+        "auc_pr": 0.8415475974959401,
+        "brier_score": 0.08455982546141508,
+        "calibration_gap": 6.798670834640141e-08
     },
     "test_metrics": {
-        "auc_roc": 0.8878704730329954,
-        "auc_pr": 0.8301439428145534,
-        "brier_score": 0.08927294993092316,
-        "brier_score_calibrated": 0.08758214206967099,
-        "calibration_gap_uncalibrated": 0.03854556014761204,
-        "calibration_gap_calibrated": 0.0012705637745144827
+        "auc_roc": 0.9011165691932955,
+        "auc_pr": 0.8499059166286296,
+        "brier_score": 0.08160163854736187,
+        "calibration_gap": 0.0024041517532960854
     }
 }
