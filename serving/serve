@@ -1,0 +1,11 @@
+#!/bin/bash
+# SageMaker calls this script to start the server.
+# It's just uvicorn — the same command you'd run locally.
+# Workers=1 keeps model memory predictable on a single instance;
+# scale by adding more instances rather than more workers per instance.
+
+exec uvicorn app.main:app \
+    --host 0.0.0.0 \
+    --port 8080 \
+    --workers 1 \
+    --log-level info
