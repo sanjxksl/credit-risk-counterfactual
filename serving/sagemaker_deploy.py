@@ -35,7 +35,7 @@ from pathlib import Path
 import boto3
 
 MODELS_DIR = Path("../models")
-PROJECT_ROOT = Path(__file__).parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 IMAGE_NAME = "credit-risk-api"
 IMAGE_TAG = "latest"

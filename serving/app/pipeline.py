@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Loads all model artifacts once at startup, then handles per-request inference.
 

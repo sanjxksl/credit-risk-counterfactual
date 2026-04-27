@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 FastAPI application — the HTTP layer that ties everything together.
 
@@ -43,7 +45,12 @@ async def lifespan(app: FastAPI):
     """
     pipeline = InferencePipeline()
     request_log = RequestLog()
-    drift_monitor = DriftMonitor(MODEL_DIR / "train.csv")
+    # train.csv is bundled into the model tar for SageMaker (MODEL_DIR/train.csv)
+    # and lives in data/ for local development
+    train_csv = MODEL_DIR / "train.csv"
+    if not train_csv.exists():
+        train_csv = MODEL_DIR.parent / "data" / "train.csv"
+    drift_monitor = DriftMonitor(train_csv)
     retrain_trigger = RetrainingTrigger()
 
     # CounterfactualEngine is heavier (loads DiCE + full training data)
@@ -135,9 +142,10 @@ def predict_with_explanation(application: LoanApplication):
     if label == 1:
         # Lazy-load the counterfactual engine on first explain request
         if _state["cf_engine"] is None:
-            _state["cf_engine"] = CounterfactualEngine(
-                pipeline, MODEL_DIR / "train.csv"
-            )
+            train_csv = MODEL_DIR / "train.csv"
+            if not train_csv.exists():
+                train_csv = MODEL_DIR.parent / "data" / "train.csv"
+            _state["cf_engine"] = CounterfactualEngine(pipeline, train_csv)
 
         preprocessed = pipeline.preprocess(raw)
         import pandas as pd

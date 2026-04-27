@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 DiCE counterfactual generation for the serving layer.
 

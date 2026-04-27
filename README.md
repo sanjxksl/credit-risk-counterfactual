@@ -1,300 +1,220 @@
 # Credit Risk Prediction with Counterfactual Explanations
 
-**Start Here**: Open [`main.ipynb`](main.ipynb) - central hub for all analyses, results, and project navigation.
+End-to-end machine learning system for predicting mortgage default risk, with fairness evaluation, actionable counterfactual explanations, and a production serving layer deployed on AWS SageMaker.
+
+---
 
 ## Overview
 
-This project develops a machine learning system for predicting loan default risk using a 3-layer neural network, with a focus on model interpretability through counterfactual explanations. The system achieves 88.8% AUC-ROC on test data with near-perfect calibration (0.1% calibration gap).
+Built on 148,670 loan applications, this project trains and deploys two classifiers — a 3-layer MLP and XGBoost — to predict the probability that a borrower will default. Beyond prediction, the system generates counterfactual explanations for declined applications: the minimum changes to loan structure that would flip the predicted outcome from default to no-default.
 
-## Problem Statement
+A key focus throughout was distinguishing genuine risk signals from data artifacts. A systematic feature audit identified five features that encoded deterministic lookup rules rather than borrower risk, including the EQUI credit bureau category exhibiting a 100% default rate across 15,000 cases. Removing these features produced a cleaner, more generalizable model.
 
-Credit risk assessment requires accurate prediction of loan default probability while maintaining fairness across demographic groups and providing actionable explanations for decisions. Traditional models often lack interpretability, making it difficult for applicants to understand rejection reasons or identify paths to approval.
-
-## Methodology
-
-### Data Preprocessing
-
-The dataset contains 148,670 loan applications with 31 features. Preprocessing steps include:
-
-1. Missing value imputation using median for numerical features
-2. Outlier handling via winsorization at 1st/99th percentiles (loan_amount, property_value, income, ltv, dtir1)
-3. Feature engineering: Binary `is_standard_term` indicator (1 if term=360 months, 0 otherwise)
-4. Log transformation of skewed continuous variables (loan_amount, income, property_value)
-5. One-hot encoding of categorical variables (68 features after encoding)
-6. Standardization using StandardScaler
-7. Train/validation/test split (80%/10%/10%) with stratification
-8. SMOTE oversampling on training set with `sampling_strategy=0.5` (minority class = 50% of majority class, resulting in 33.3% default rate)
-
-### Model Architecture
-
-3-layer Multi-Layer Perceptron optimized for tabular credit data:
-
-```
-Input Layer: 68 features
-    ↓
-Hidden Layer 1: 128 units, BatchNorm, ReLU, Dropout(0.3)
-    ↓
-Hidden Layer 2: 64 units, BatchNorm, ReLU, Dropout(0.2)
-    ↓
-Hidden Layer 3: 32 units, BatchNorm, ReLU, Dropout(0.1)
-    ↓
-Output Layer: 1 unit, Sigmoid activation
-```
-
-**Total Parameters**: 19,649
-
-**Architecture Rationale**: Research shows that 2-3 layer MLPs achieve optimal performance on tabular credit scoring tasks. Deeper residual architectures (ResNet-style) designed for image classification are inappropriate for structured tabular data with no spatial relationships. Our architecture follows industry best practices with progressive dimension reduction (128→64→32).
-
-### Training Configuration
-
-- **Loss Function**: Binary Cross-Entropy (not Focal Loss - training data balanced to 33.3% via SMOTE)
-- **Optimizer**: Adam with weight decay 1e-4
-- **Learning Rate**: 0.001 with ReduceLROnPlateau scheduler
-- **Batch Size**: 128
-- **Early Stopping**: Patience of 15 epochs
-- **Regularization**: Dropout (0.3, 0.2, 0.1) and L2 weight decay
-
-### Calibration
-
-Model predictions showed slight overestimation (27.7% predicted vs 24.6% actual). Platt Scaling was applied using validation set predictions:
-
-- **Uncalibrated**: Brier Score 0.0813, Calibration Gap 3.0%
-- **Calibrated**: Brier Score 0.0799, Calibration Gap 0.3%
+---
 
 ## Results
 
 ### Model Performance
 
-| Metric | Validation | Test |
-|--------|-----------|------|
-| AUC-ROC | 0.8794 | 0.8879 |
-| AUC-PR | 0.8209 | 0.8301 |
-| Brier Score (Calibrated) | 0.0906 | 0.0876 |
-| Calibration Gap (Calibrated) | 0.0% | 0.1% |
+| Metric | MLP | XGBoost |
+|--------|-----|---------|
+| AUC-ROC (test) | 0.9011 | 0.9009 |
+| AUC-PR (test) | 0.8499 | 0.8502 |
+| Brier Score (calibrated) | 0.0816 | 0.0823 |
+| Calibration Gap | 0.24% | 0.22% |
 
-### XGBoost Comparison
+Both models are calibrated using Platt scaling to correct the upward probability bias introduced by pos_weight loss reweighting — not as a post-hoc fix for data distribution shift.
 
-- Gradient-boosted trees (500 estimators, depth=5, lr=0.05, subsample/colsample=0.8) reach **0.8928 test AUC-ROC** and **0.8384 AUC-PR**, edging out the MLP by +0.005 AUC and +0.008 AUPR.
-- Reliability improves slightly: test Brier score **0.0847** vs **0.0893** for the MLP; Platt scaling trims the calibration gap to **0.11%** (MLP: **0.13%**).
-- Logistic regression remains the speed/interpretability baseline (0.8427 test AUC-ROC), but both boosted trees and the MLP deliver markedly higher ranking quality.
+### Fairness
 
-### Bias Analysis
-
-Comprehensive fairness evaluation across demographic groups using calibrated predictions:
-
-**Gender Fairness:**
-- Calibration gap: Maximum 0.8% across all gender groups
-- Disparate Impact Ratio: 1.021 (passes 80% rule)
-- AUC-ROC range: 0.885-0.908
-
-**Age Fairness:**
-- Calibration gap: Maximum 1.1% across age groups
-- AUC-ROC range: 0.889-0.923
-
-**Regional Fairness:**
-- AUC consistent across all regions (0.882-0.904)
-- Calibration gap varies (max 2.3% for North-East region with 109 samples, <1% for larger regions)
-
-### Feature Importance
-
-Top risk drivers identified through logistic regression coefficients:
-
-| Feature | Coefficient | Interpretation |
-|---------|-------------|----------------|
-| credit_type_EQUI | +37.67 | Strongly increases default risk |
-| credit_type_EXP | -11.70 | Strongly decreases default risk |
-| construction_type_mh | +5.31 | Mobile homes increase risk |
-| lump_sum_payment_lpsm | +2.62 | Lump sum payments increase risk |
-| secured_by_home | -2.61 | Home-secured loans decrease risk |
+| Group | Calibration Gap | AUC-ROC | Disparate Impact |
+|-------|----------------|---------|-----------------|
+| Gender | < 1.2% | 0.887–0.910 | 1.021 (passes 80% rule) |
+| Age | < 3.1% | 0.890–0.925 | — |
+| Region | < 1.1% | 0.879–0.906 | — |
 
 ### Counterfactual Explanations
 
-Generated counterfactuals for **13 diverse cases** using DiCE framework with realistic bounds (5th-95th percentiles). Focused on **immediately actionable** features, deliberately excluding `credit_score` and `income` as these cannot be changed short-term.
+- 10 high-risk cases selected across the 0.55–0.95 probability range
+- 9/10 cases received actionable counterfactuals — average 2.5 feature changes required
+- 1 case intentionally retained with no counterfactual found: risk driven by immutable borrower characteristics rather than loan structure, demonstrating the system distinguishes between restructurable and non-restructurable risk
+- Most commonly modified features: loan_amount (67%), dtir1 (56%), ltv (54%)
 
-**Analysis Results:**
-- **13 cases analyzed** with varying risk profiles
-- **46 total counterfactuals** generated
-- **100% success rate** with bounded feature space
+---
 
-**Summary Statistics:**
+## Methodology
 
-| Metric | Value |
-|--------|-------|
-| Average features changed per CF | 2.22 |
-| Range of features changed | 1-4 |
-| Success rate | 100% |
+### Feature Audit and Artifact Removal
 
-**Most Commonly Changed Features:**
+Before modelling, every categorical feature was audited for near-deterministic associations with the target. Five features were removed:
 
-| Feature | Changed in | Actionable | Impact |
-|---------|-----------|------------|--------|
-| LTV (Loan-to-Value) | 58.7% | Yes | Increase down payment |
-| DTIR (Debt-to-Income) | 56.5% | Yes | Pay down existing debt before applying |
-| Term | 54.3% | Yes | Adjust loan duration |
-| Property Value | 30.4% | Yes | Choose less expensive property |
-| Loan Amount | 21.7% | Yes | Request smaller loan |
+| Feature | Reason |
+|---------|--------|
+| credit_type | EQUI bureau: 100% default rate, n=15,298 — encodes loan program, not borrower risk |
+| co-applicant_credit_type | Administrative metadata — which bureau was queried |
+| security_type | "Indriect" (typo) category: 100% default, n=33 — same artifact cluster |
+| construction_type | "mh" category: 100% default, n=33 — same artifact cluster |
+| secured_by | "land" category: 100% default, n=33 — same artifact cluster |
 
-**Mutable features** (applicant can control during application):
-- loan_amount: Request a different loan amount
-- property_value: Choose a different property
-- ltv: Loan-to-value ratio (controlled by loan amount and down payment)
-- term: Choose different loan duration
-- dtir1: Pay down existing debt before applying
+Final feature set: 56 features (8 numeric, 1 binary, 47 one-hot encoded).
 
-**Immutable features** (cannot change or not actionable short-term):
-- age, gender, region: Demographic factors
-- credit_score: Takes months to years to improve
-- income: Cannot instantly increase
-- Historical credit bureau data
+### Preprocessing Pipeline
+
+1. Winsorize loan_amount, income, property_value at raw bounds
+2. Log-transform those three features
+3. Winsorize ltv and dtir1 at 1st/99th percentiles
+4. Derive binary is_standard_term (term == 360)
+5. StandardScaler on numeric features, OneHotEncoder on categoricals
+
+Class imbalance handled via pos_weight in BCEWithLogitsLoss rather than SMOTE, preserving the real training distribution (24.6% default rate) and avoiding distribution shift at inference.
+
+### MLP Architecture
+
+```
+Input: 56 features
+  → Linear(128) → BatchNorm → ReLU → Dropout(0.3)
+  → Linear(64)  → BatchNorm → ReLU → Dropout(0.2)
+  → Linear(32)  → BatchNorm → ReLU → Dropout(0.1)
+  → Linear(1)
+```
+
+Trained with BCEWithLogitsLoss + pos_weight=3.06, Adam optimizer, early stopping (patience=15).
+
+### XGBoost
+
+500 estimators, depth=5, lr=0.05, scale_pos_weight=3.06, early stopping at 30 rounds. Calibrated with Platt scaling on the validation set.
+
+---
+
+## Production Serving
+
+The model is deployed as a REST API on AWS SageMaker using a custom Docker container.
+
+```
+POST /predict          → calibrated default probability + risk level (~5ms)
+POST /predict/explain  → probability + DiCE counterfactual recommendations (~2-5s)
+GET  /ping             → health check (SageMaker)
+GET  /monitoring/drift → Evidently drift report on buffered live traffic
+```
+
+### Monitoring and Retraining
+
+Incoming requests are logged and compared against the training distribution using Evidently. Retraining is recommended when:
+- More than 30% of features show statistical drift
+- Predicted default rate shifts more than 5 percentage points from the 24.6% training baseline
+
+### Local Setup
+
+```bash
+git clone https://github.com/sanjxksl/credit-risk-counterfactual.git
+cd credit-risk-counterfactual/serving
+pip install -r requirements.txt
+MODEL_DIR=../models uvicorn app.main:app --reload --port 8080
+```
+
+Interactive API docs available at `http://localhost:8080/docs`.
+
+### SageMaker Deployment
+
+```bash
+cd serving
+python3 sagemaker_deploy.py --bucket your-s3-bucket --region us-east-1
+```
+
+---
 
 ## Project Structure
 
 ```
 credit-risk-counterfactual/
-├── main.ipynb                          # START HERE - Central project hub
 ├── data/
-│   ├── train.csv, val.csv, test.csv   # Preprocessed splits
-│   └── high_risk_cases.csv            # Selected cases for analysis
+│   ├── cleaned_loan_data.csv          # Post-cleaning, pre-split
+│   ├── train.csv, val.csv, test.csv   # 80/10/10 stratified splits (56 features)
+│   └── high_risk_cases.csv            # 10 selected cases for counterfactual analysis
 ├── models/
-│   ├── mlp_model.pth                  # Trained neural network (88.8% AUC)
-│   ├── calibrator.pkl                 # Platt Scaling calibrator
-│   ├── preprocessor.pkl               # Feature scaler
-│   ├── dice_bounds.json               # Counterfactual bounds (5th-95th percentiles)
-│   └── winsorize_bounds.json          # Outlier caps (1st-99th percentiles)
-├── results/
-│   ├── mlp_predictions.csv            # Test set predictions
-│   ├── mlp_metrics.json               # Performance metrics
-│   ├── bias_*.csv                     # Fairness analysis results
-│   ├── dice_counterfactuals/          # Counterfactual explanations (13 cases)
-│   └── figures/                       # Visualizations
+│   ├── mlp_model.pth                  # Trained MLP (AUC 0.901)
+│   ├── xgboost_model.json             # Trained XGBoost (AUC 0.901)
+│   ├── calibrator.pkl                 # MLP Platt scaling calibrator
+│   ├── xgboost_calibrator.pkl         # XGBoost Platt scaling calibrator
+│   ├── preprocessor.pkl               # Fitted ColumnTransformer
+│   ├── winsorize_bounds.json          # ltv/dtir1 clip bounds
+│   ├── raw_winsorize_bounds.json      # loan_amount/income/property_value clip bounds
+│   └── training_meta.json             # pos_weight and feature metadata
 ├── notebooks/
-│   ├── data_cleaning.ipynb                    # Data preprocessing
-│   ├── feature_engineering.ipynb              # Feature transformation & splits
-│   ├── EDA.ipynb                              # Exploratory analysis
-│   ├── logistic_training.ipynb                # Logistic regression baseline
-│   ├── feature_analysis.ipynb                 # Logistic feature importance
-│   ├── mlp_training.ipynb                     # MLP training with calibration
-│   ├── mlp_feature_importance.ipynb           # MLP permutation importance
-│   ├── model_evaluation.ipynb                 # Performance evaluation
-│   ├── bias_fairness_analysis.ipynb           # Fairness evaluation
-│   ├── generate_counterfactuals.ipynb         # DiCE counterfactuals
-│   └── counterfactual_summary_statistics.ipynb # CF analysis
-└── requirements.txt                            # Dependencies
+│   ├── EDA.ipynb                              # Exploratory analysis + feature audit
+│   ├── data_cleaning.ipynb                    # Missing values, log transforms
+│   ├── feature_engineering.ipynb              # Splits, scaling, OHE
+│   ├── mlp_training.ipynb                     # MLP training + calibration
+│   ├── xgboost_training.ipynb                 # XGBoost training + calibration
+│   ├── model_evaluation.ipynb                 # MLP vs XGBoost comparison
+│   ├── bias_fairness_analysis.ipynb           # Fairness across demographic groups
+│   ├── generate_counterfactuals.ipynb         # DiCE counterfactual generation
+│   └── counterfactual_summary_statistics.ipynb # CF analysis and visualizations
+├── results/
+│   ├── mlp_predictions.csv, mlp_metrics.json
+│   ├── xgboost_predictions.csv, xgboost_metrics.json
+│   ├── bias_gender.csv, bias_age.csv, bias_region.csv
+│   ├── dice_counterfactuals/
+│   └── figures/
+├── serving/
+│   ├── app/
+│   │   ├── main.py          # FastAPI application
+│   │   ├── pipeline.py      # Inference pipeline
+│   │   ├── schemas.py       # Pydantic input/output validation
+│   │   ├── counterfactuals.py # DiCE integration
+│   │   └── monitoring.py    # Evidently drift detection + retraining trigger
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── sagemaker_deploy.py
+│   └── test_local.py
+└── README.md
 ```
 
-## Usage
+---
 
-### Quick Start
+## Notebook Order
 
-1. **Clone and install**:
-```bash
-git clone https://github.com/sanjxksl/credit-risk-counterfactual.git
-cd credit-risk-counterfactual
-pip install -r requirements.txt
-```
+1. `EDA.ipynb` — understand the data, run the feature audit
+2. `data_cleaning.ipynb` — handle missing values, log transforms
+3. `feature_engineering.ipynb` — splits, scaling, encoding
+4. `mlp_training.ipynb` — train the neural network
+5. `xgboost_training.ipynb` — train XGBoost
+6. `model_evaluation.ipynb` — compare both models
+7. `bias_fairness_analysis.ipynb` — fairness evaluation
+8. `generate_counterfactuals.ipynb` — DiCE explanations
+9. `counterfactual_summary_statistics.ipynb` — summarise CF results
 
-2. **Open the main hub**:
-```bash
-jupyter notebook main.ipynb
-```
+---
 
-`main.ipynb` is your central hub that:
-- Shows model performance summary (AUC, calibration, Brier score)
-- Links to all analysis notebooks
-- Displays feature importance and bias analysis results
-- Shows counterfactual explanations summary
-- Provides interactive prediction demo
+## Key Design Decisions
 
-### Analysis Notebooks
+**Why pos_weight instead of SMOTE**
+SMOTE resamples training data to 33.3% default rate, requiring Platt scaling as a correction at inference time. pos_weight rebalances gradients without changing the data distribution — the training set stays at the observed 24.6% rate, making calibration straightforward and inference honest.
 
-For detailed step-by-step analysis, explore notebooks in this order:
-1. `notebooks/data_cleaning.ipynb` - Data preprocessing
-2. `notebooks/feature_engineering.ipynb` - Feature transformation, splits, SMOTE
-3. `notebooks/EDA.ipynb` - Exploratory data analysis
-4. `notebooks/logistic_training.ipynb` - Baseline model
-5. `notebooks/feature_analysis.ipynb` - Feature importance
-6. `notebooks/mlp_training.ipynb` - Neural network training
-7. `notebooks/model_evaluation.ipynb` - Performance evaluation
-8. `notebooks/bias_fairness_analysis.ipynb` - Fairness analysis
-9. `notebooks/generate_counterfactuals.ipynb` - Counterfactual generation
-10. `notebooks/counterfactual_summary_statistics.ipynb` - CF analysis
+**Why Platt scaling is legitimate here**
+pos_weight biases raw sigmoid outputs upward by design. Platt scaling on the validation set corrects this known artifact. This is different from using Platt scaling to fix a SMOTE-induced distribution shift, which would be circular.
 
-## Dependencies
+**Why counterfactual failures are kept**
+One case (predicted probability 0.94) returned no feasible counterfactuals. This is retained deliberately — it demonstrates that the system distinguishes between risk driven by adjustable loan structure versus risk driven by the borrower's underlying financial profile.
 
-Core Requirements:
-- Python 3.8+
-- PyTorch 2.4.1
-- scikit-learn 1.3.2
-- pandas 1.5.3
-- numpy 1.24.3
-- dice-ml 0.11
-- imbalanced-learn 0.12.4
-- matplotlib 3.7.5
-- seaborn 0.13.2
-
-See `requirements.txt` for complete list.
-
-## Key Findings
-
-1. **Model Performance**: 3-layer MLP achieves 88.8% test AUC-ROC with 19,649 parameters. Winsorization at 1st/99th percentiles and binary term feature (is_standard_term) improve robustness while maintaining strong discriminative power.
-
-2. **Calibration**: Platt Scaling achieves near-perfect calibration with 0.1% calibration gap on test set, ensuring predicted probabilities accurately reflect true default risk.
-
-3. **SMOTE Strategy**: Using `sampling_strategy=0.5` (33.3% default rate in training vs 24.6% in test) balances class representation while preserving calibration quality.
-
-4. **Fairness**: Model demonstrates excellent fairness properties across gender, age, and regional groups with calibration gaps <1% for most groups.
-
-5. **Interpretability**: Counterfactual explanations reveal that loan modifications typically require 2.2 feature changes on average. LTV, DTIR, and term are the most frequently modified features, all of which applicants can control through down payment size, debt management, and loan structure choices.
-
-6. **DiCE Success**: Bounded counterfactual generation (5th-95th percentiles) achieved 100% success rate across 13 cases, producing 46 realistic and actionable recommendations.
+---
 
 ## Limitations
 
-1. Dataset limited to specific time period and geographic region
-2. Some regional groups have small sample sizes (North-East: 109 samples)
-3. Counterfactuals assume feature changes are independent (e.g., changing property value affects LTV)
-4. Model trained on historical data may not capture recent economic conditions
-5. Winsorization at 1st/99th percentiles may remove important signal from extreme cases
+- Dataset limited to 2019 loan applications from one originator
+- North-East region has only 1,235 test samples — fairness estimates less reliable there
+- Counterfactual generation assumes feature changes are independent (changing loan_amount and ltv simultaneously may not be realistic)
+- Monitoring runs in memory — production deployment requires persistent logging to S3
 
-## Future Work
-
-1. Incorporate temporal dynamics and macroeconomic indicators
-2. Compare with gradient-based counterfactual methods (e.g., Wachter et al.) for higher success rates
-3. Explore feasibility constraints to ensure counterfactual recommendations are realistic
-4. Develop interactive visualization dashboard for counterfactuals
-5. Extend fairness analysis to intersectional groups
-6. Implement model monitoring for performance degradation
+---
 
 ## References
 
-1. Mothilal, R. K., Sharma, A., & Tan, C. (2020). Explaining machine learning classifiers through diverse counterfactual explanations. *Proceedings of the 2020 Conference on Fairness, Accountability, and Transparency*, 607-617.
+1. Mothilal et al. (2020). Explaining machine learning classifiers through diverse counterfactual explanations. *FAT\* 2020*.
+2. Platt (1999). Probabilistic outputs for support vector machines. *Advances in large margin classifiers*.
 
-2. Platt, J. (1999). Probabilistic outputs for support vector machines and comparisons to regularized likelihood methods. *Advances in large margin classifiers*, 10(3), 61-74.
-
-3. Chawla, N. V., Bowyer, K. W., Hall, L. O., & Kegelmeyer, W. P. (2002). SMOTE: synthetic minority over-sampling technique. *Journal of artificial intelligence research*, 16, 321-357.
-
-## Citation
-
-If you use this project in your research, please cite:
-
-```bibtex
-@software{credit_risk_counterfactual_2025,
-  author = {KSL, Sanjana and Jiang, Michael and Xiao, Sharon and Wang, Zhenyu and Zimeng},
-  title = {Credit Risk Prediction with Counterfactual Explanations},
-  year = {2025},
-  publisher = {GitHub},
-  url = {https://github.com/sanjxksl/credit-risk-counterfactual}
-}
-```
-
-## Team
-
-- Sanjana KSL
-- Michael Jiang
-- Sharon Xiao
-- Zhenyu Wang
-- Zimeng
+---
 
 ## License
 
-This project is licensed under the MIT License.
+MIT

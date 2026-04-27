@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Monitoring layer: data drift detection and retraining triggers.
 
