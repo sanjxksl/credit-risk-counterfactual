@@ -46,7 +46,7 @@ ENDPOINT_NAME = "credit-risk-endpoint"
 # ml.m5.xlarge: 4 vCPU, 16 GB RAM — enough for the MLP + DiCE reference data.
 # For higher throughput, scale out with initial_instance_count > 1 rather
 # than scaling up to a larger instance type.
-INSTANCE_TYPE = "ml.m5.xlarge"
+INSTANCE_TYPE = "ml.t2.medium"
 INITIAL_INSTANCE_COUNT = 1
 
 
@@ -116,7 +116,12 @@ def build_and_push_image(account_id: str, region: str) -> str:
 
     print("Building Docker image...")
     subprocess.run(
-        ["docker", "build", "-t", full_tag, "."],
+        [
+            "docker", "build",
+            "--platform", "linux/amd64",   # SageMaker instances are x86_64
+            "--provenance=false",           # prevents OCI manifest list format that SageMaker rejects
+            "-t", full_tag, ".",
+        ],
         cwd=Path(__file__).parent,
         check=True,
     )
@@ -182,14 +187,28 @@ def deploy(s3_bucket: str, region: str) -> str:
     )
 
     print(f"Deploying endpoint '{ENDPOINT_NAME}' (takes ~5 minutes)...")
+    needs_create = False
     try:
+        existing = sagemaker.describe_endpoint(EndpointName=ENDPOINT_NAME)
+        status = existing["EndpointStatus"]
+        if status == "Failed":
+            print("  Existing endpoint is Failed — deleting before recreating...")
+            sagemaker.delete_endpoint(EndpointName=ENDPOINT_NAME)
+            sagemaker.get_waiter("endpoint_deleted").wait(EndpointName=ENDPOINT_NAME)
+            needs_create = True
+        else:
+            sagemaker.update_endpoint(
+                EndpointName=ENDPOINT_NAME,
+                EndpointConfigName=ENDPOINT_CONFIG_NAME,
+            )
+    except sagemaker.exceptions.ClientError as e:
+        if "Could not find endpoint" in str(e):
+            needs_create = True
+        else:
+            raise
+
+    if needs_create:
         sagemaker.create_endpoint(
-            EndpointName=ENDPOINT_NAME,
-            EndpointConfigName=ENDPOINT_CONFIG_NAME,
-        )
-    except sagemaker.exceptions.ClientError:
-        # Endpoint already exists — update it (blue/green swap, zero downtime)
-        sagemaker.update_endpoint(
             EndpointName=ENDPOINT_NAME,
             EndpointConfigName=ENDPOINT_CONFIG_NAME,
         )

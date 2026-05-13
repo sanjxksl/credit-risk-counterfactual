@@ -84,4 +84,5 @@ site/
 !models/.gitkeep
 !results/.gitkeep
 !results/figures/.gitkeep
+!results/figures/sagemaker_endpoint.png
 !results/dice_counterfactuals/.gitkeep

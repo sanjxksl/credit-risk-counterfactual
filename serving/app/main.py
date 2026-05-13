@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from .counterfactuals import CounterfactualEngine
 from .monitoring import DriftMonitor, MIN_REQUESTS_FOR_DRIFT, RequestLog, RetrainingTrigger
@@ -71,6 +72,13 @@ app = FastAPI(
     description="Predicts loan default probability and generates actionable counterfactuals.",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

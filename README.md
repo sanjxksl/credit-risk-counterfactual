@@ -90,6 +90,8 @@ Trained with BCEWithLogitsLoss + pos_weight=3.06, Adam optimizer, early stopping
 
 The model is deployed as a REST API on AWS SageMaker using a custom Docker container.
 
+![SageMaker endpoint InService](results/figures/sagemaker_endpoint.png)
+
 ```
 POST /predict          → calibrated default probability + risk level (~5ms)
 POST /predict/explain  → probability + DiCE counterfactual recommendations (~2-5s)

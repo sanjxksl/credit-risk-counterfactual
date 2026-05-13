@@ -18,6 +18,9 @@ WORKDIR /opt/ml/code
 # Install dependencies first (Docker caches this layer — if requirements.txt
 # doesn't change, subsequent builds skip this slow step)
 COPY requirements.txt .
+# Install CPU-only PyTorch first (~200MB vs ~3.2GB for the default GPU build).
+# SageMaker inference instances don't have GPUs for this model size.
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
@@ -25,9 +28,9 @@ COPY app/ ./app/
 
 # SageMaker starts the container by running the 'serve' script.
 # We use a shell script so SageMaker's expected entrypoint works.
-COPY serve .
-RUN chmod +x serve
+COPY serve /usr/local/bin/serve
+RUN chmod +x /usr/local/bin/serve
 
 EXPOSE 8080
 
-CMD ["./serve"]
+CMD ["serve"]

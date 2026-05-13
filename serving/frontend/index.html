@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Credit Risk Platform</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #232637;
+      --border: #2e3145;
+      --accent: #4f7cf8;
+      --accent-hover: #6b91ff;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      height: 56px;
+    }
+    .nav-logo {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text);
+      letter-spacing: -0.3px;
+      margin-right: 16px;
+    }
+    .nav-logo span { color: var(--accent); }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0 4px;
+      height: 56px;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.active { color: var(--text); border-color: var(--accent); }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    .api-status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot.offline { background: var(--red); }
+
+    /* ── PAGES ── */
+    .page { display: none; padding: 32px; max-width: 1100px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* ── FORM PAGE ── */
+    .form-layout {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 20px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin: 20px 0 12px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    .fields-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .field-full { grid-column: 1 / -1; }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .field input,
+    .field select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus,
+    .field select:focus { border-color: var(--accent); }
+    .field select option { background: var(--surface2); }
+
+    .submit-btn {
+      width: 100%;
+      margin-top: 20px;
+      padding: 11px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .submit-btn:hover { background: var(--accent-hover); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* result panel */
+    .result-panel { position: sticky; top: 24px; }
+
+    .result-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+      gap: 12px;
+    }
+    .result-placeholder svg { opacity: 0.3; }
+
+    /* probability gauge */
+    .gauge-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 0 8px;
+    }
+    .gauge-ring {
+      position: relative;
+      width: 140px;
+      height: 70px;
+      overflow: hidden;
+    }
+    .gauge-ring svg { position: absolute; top: 0; left: 0; }
+    .gauge-label {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+    .gauge-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+    .risk-badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    .risk-low { background: rgba(34,197,94,.15); color: var(--green); }
+    .risk-medium { background: rgba(245,158,11,.15); color: var(--yellow); }
+    .risk-high { background: rgba(239,68,68,.15); color: var(--red); }
+
+    .result-msg {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 14px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+    /* counterfactuals */
+    .cf-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 12px;
+    }
+    .cf-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .cf-card:last-child { margin-bottom: 0; }
+    .cf-prob {
+      font-size: 11px;
+      color: var(--green);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .cf-desc {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .cf-changes {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .cf-tag {
+      background: rgba(79,124,248,.12);
+      border: 1px solid rgba(79,124,248,.25);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: var(--accent);
+      font-family: monospace;
+    }
+
+    .no-cf-msg {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 24px; height: 24px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 40px auto;
+    }
+
+    /* ── DASHBOARD PAGE ── */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: var(--text);
+    }
+    .stat-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .dash-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    /* predictions table */
+    .pred-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .pred-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0 12px 10px;
+    }
+    .pred-table td {
+      padding: 9px 12px;
+      border-top: 1px solid var(--border);
+      color: var(--text);
+    }
+    .pred-table tr:hover td { background: rgba(255,255,255,.02); }
+
+    .empty-table {
+      text-align: center;
+      padding: 32px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* drift panel */
+    .drift-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      margin-bottom: 16px;
+    }
+    .drift-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .drift-result {
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .drift-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .drift-item:last-child { border-bottom: none; }
+    .drift-key { color: var(--muted); }
+    .drift-val { font-weight: 500; }
+    .drift-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .drift-tag {
+      background: rgba(239,68,68,.12);
+      border: 1px solid rgba(239,68,68,.2);
+      color: var(--red);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .model-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .model-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0 12px 10px;
+    }
+    .model-table td {
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+    }
+    .model-table td:first-child { color: var(--muted); }
+    .model-table td:not(:first-child) { font-weight: 500; }
+
+    /* error banner */
+    .error-banner {
+      background: rgba(239,68,68,.1);
+      border: 1px solid rgba(239,68,68,.3);
+      border-radius: 7px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--red);
+      margin-bottom: 16px;
+    }
+
+    /* responsive */
+    @media (max-width: 900px) {
+      .form-layout { grid-template-columns: 1fr; }
+      .result-panel { position: static; }
+      .dash-grid { grid-template-columns: 1fr 1fr; }
+      .dash-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .fields-grid { grid-template-columns: 1fr; }
+      .dash-grid { grid-template-columns: 1fr; }
+      nav { padding: 0 16px; }
+      .page { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">Credit<span>Risk</span></span>
+  <button class="tab-btn active" onclick="showPage('form', this)">Loan Application</button>
+  <button class="tab-btn" onclick="showPage('dashboard', this)">Dashboard</button>
+  <div class="api-status">
+    <div class="dot" id="api-dot"></div>
+    <span id="api-label">Checking API…</span>
+  </div>
+</nav>
+
+<!-- ═══════════════════ FORM PAGE ═══════════════════ -->
+<div id="page-form" class="page active">
+  <div class="form-layout">
+
+    <!-- form -->
+    <div class="card">
+      <div class="card-title">Application Details</div>
+
+      <form id="loan-form" onsubmit="submitForm(event)">
+
+        <div class="section-label">Loan Financials</div>
+        <div class="fields-grid">
+          <div class="field">
+            <label>Loan Amount ($)</label>
+            <input type="number" name="loan_amount" placeholder="280000" required min="1" step="1000" />
+          </div>
+          <div class="field">
+            <label>Property Value ($)</label>
+            <input type="number" name="property_value" placeholder="350000" required min="1" step="1000" />
+          </div>
+          <div class="field">
+            <label>Term (months)</label>
+            <input type="number" name="term" placeholder="360" required min="1" />
+          </div>
+          <div class="field">
+            <label>LTV (%)</label>
+            <input type="number" name="ltv" placeholder="80" required min="0.1" max="200" step="0.1" />
+          </div>
+          <div class="field">
+            <label>Annual Income ($)</label>
+            <input type="number" name="income" placeholder="90000" required min="0" step="1000" />
+          </div>
+          <div class="field">
+            <label>Debt-to-Income Ratio (%)</label>
+            <input type="number" name="dtir1" placeholder="36" required min="0.1" max="100" step="0.1" />
+          </div>
+          <div class="field">
+            <label>Credit Score</label>
+            <input type="number" name="credit_score" placeholder="720" required min="500" max="900" />
+          </div>
+          <div class="field">
+            <label>Year</label>
+            <input type="number" name="year" value="2019" required />
+          </div>
+        </div>
+
+        <div class="section-label">Loan Structure</div>
+        <div class="fields-grid">
+          <div class="field">
+            <label>Loan Limit</label>
+            <select name="loan_limit" required>
+              <option value="cf">Conforming (cf)</option>
+              <option value="ncf">Non-conforming (ncf)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Loan Type</label>
+            <select name="loan_type" required>
+              <option value="type1">Type 1</option>
+              <option value="type2">Type 2</option>
+              <option value="type3">Type 3</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Loan Purpose</label>
+            <select name="loan_purpose" required>
+              <option value="p1">P1 – Purchase</option>
+              <option value="p2">P2 – Refinance</option>
+              <option value="p3">P3 – Cash-out Refi</option>
+              <option value="p4">P4 – Home Equity</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Pre-approved?</label>
+            <select name="approv_in_adv" required>
+              <option value="pre">Pre-approved</option>
+              <option value="nopre">Not pre-approved</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Negative Amortisation</label>
+            <select name="neg_ammortization" required>
+              <option value="not_neg">Not negative amort.</option>
+              <option value="neg_amm">Negative amort.</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Interest Only</label>
+            <select name="interest_only" required>
+              <option value="not_int">Not interest only</option>
+              <option value="int_only">Interest only</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Lump Sum Payment</label>
+            <select name="lump_sum_payment" required>
+              <option value="not_lpsm">No lump sum</option>
+              <option value="lpsm">Lump sum</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Occupancy Type</label>
+            <select name="occupancy_type" required>
+              <option value="pr">Primary residence</option>
+              <option value="sr">Secondary residence</option>
+              <option value="ir">Investment / rental</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Total Units</label>
+            <select name="total_units" required>
+              <option value="1U">1 unit</option>
+              <option value="2U">2 units</option>
+              <option value="3U">3 units</option>
+              <option value="4U">4 units</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Submission Channel</label>
+            <select name="submission_of_application" required>
+              <option value="to_inst">To institution</option>
+              <option value="not_inst">Not to institution</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="section-label">Borrower Profile</div>
+        <div class="fields-grid">
+          <div class="field">
+            <label>Gender</label>
+            <select name="gender" required>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Joint">Joint</option>
+              <option value="Sex Not Available">Not disclosed</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Age Group</label>
+            <select name="age" required>
+              <option value="<25">Under 25</option>
+              <option value="25-34">25–34</option>
+              <option value="35-44" selected>35–44</option>
+              <option value="45-54">45–54</option>
+              <option value="55-64">55–64</option>
+              <option value="65-74">65–74</option>
+              <option value=">74">Over 74</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Credit Worthiness</label>
+            <select name="credit_worthiness" required>
+              <option value="l1">L1 (standard)</option>
+              <option value="l2">L2 (enhanced)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Open Credit</label>
+            <select name="open_credit" required>
+              <option value="nopc">No open credit</option>
+              <option value="opc">Open credit</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Business / Commercial</label>
+            <select name="business_or_commercial" required>
+              <option value="nob/c">Personal</option>
+              <option value="b/c">Business / commercial</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Region</label>
+            <select name="region" required>
+              <option value="North">North</option>
+              <option value="North-East">North-East</option>
+              <option value="central">Central</option>
+              <option value="south">South</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submit-btn">
+          Assess Risk &amp; Get Recommendations
+        </button>
+
+      </form>
+    </div>
+
+    <!-- result panel -->
+    <div class="result-panel">
+      <div class="card" id="result-card">
+        <div class="card-title">Assessment Result</div>
+        <div id="result-content">
+          <div class="result-placeholder">
+            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9 17v-2m3 2v-4m3 4v-6M5 20h14a2 2 0 002-2V7l-5-5H5a2 2 0 00-2 2v13a2 2 0 002 2z"/>
+            </svg>
+            Submit an application to see the risk assessment and counterfactual recommendations.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════ DASHBOARD PAGE ═══════════════════ -->
+<div id="page-dashboard" class="page">
+
+  <!-- model performance -->
+  <div class="dash-grid">
+    <div class="stat-card">
+      <div class="stat-label">AUC-ROC (MLP)</div>
+      <div class="stat-value">0.901</div>
+      <div class="stat-sub">Test set · 148,670 loans</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">AUC-PR (MLP)</div>
+      <div class="stat-value">0.850</div>
+      <div class="stat-sub">High-precision regime</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Brier Score</div>
+      <div class="stat-value">0.082</div>
+      <div class="stat-sub">Calibrated (Platt scaling)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Calibration Gap</div>
+      <div class="stat-value">0.24%</div>
+      <div class="stat-sub">Across all risk levels</div>
+    </div>
+  </div>
+
+  <div class="dash-row">
+
+    <!-- recent predictions -->
+    <div class="card">
+      <div class="card-title">Recent Predictions (this session)</div>
+      <table class="pred-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Probability</th>
+            <th>Risk Level</th>
+            <th>Label</th>
+            <th>CFs</th>
+          </tr>
+        </thead>
+        <tbody id="pred-tbody">
+          <tr><td colspan="5" class="empty-table">No predictions yet. Submit an application above.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- fairness snapshot -->
+    <div class="card">
+      <div class="card-title">Fairness Snapshot</div>
+      <table class="model-table">
+        <thead>
+          <tr>
+            <th>Group</th>
+            <th>Calib. Gap</th>
+            <th>AUC-ROC</th>
+            <th>DI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Gender</td>
+            <td>&lt; 1.2%</td>
+            <td>0.887–0.910</td>
+            <td style="color:var(--green)">1.021 ✓</td>
+          </tr>
+          <tr>
+            <td>Age</td>
+            <td>&lt; 3.1%</td>
+            <td>0.890–0.925</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Region</td>
+            <td>&lt; 1.1%</td>
+            <td>0.879–0.906</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:16px;">
+        <table class="model-table">
+          <thead>
+            <tr><th colspan="2">Model Comparison</th><th>MLP</th><th>XGBoost</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>AUC-ROC</td><td></td><td>0.9011</td><td>0.9009</td></tr>
+            <tr><td>AUC-PR</td><td></td><td>0.8499</td><td>0.8502</td></tr>
+            <tr><td>Brier</td><td></td><td>0.0816</td><td>0.0823</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- drift monitoring -->
+  <div class="card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:0">Drift Monitoring</div>
+      <button class="drift-btn" onclick="checkDrift()">Run Evidently Report</button>
+    </div>
+    <div id="drift-content">
+      <div style="font-size:13px; color:var(--muted)">
+        Click "Run Evidently Report" to compare live traffic to the training distribution.
+        Requires at least 50 buffered requests (use the form above to generate them).
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+// CONFIG
+// ──────────────────────────────────────────────
+const API = 'http://localhost:8080';
+const predictions = [];
+
+// ──────────────────────────────────────────────
+// NAVIGATION
+// ──────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ──────────────────────────────────────────────
+// API HEALTH CHECK
+// ──────────────────────────────────────────────
+async function checkHealth() {
+  const dot = document.getElementById('api-dot');
+  const label = document.getElementById('api-label');
+  try {
+    const r = await fetch(`${API}/ping`, { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      dot.className = 'dot online';
+      label.textContent = 'API online';
+    } else {
+      throw new Error('non-200');
+    }
+  } catch {
+    dot.className = 'dot offline';
+    label.textContent = 'API offline — start the server';
+  }
+}
+checkHealth();
+setInterval(checkHealth, 30000);
+
+// ──────────────────────────────────────────────
+// FORM SUBMIT
+// ──────────────────────────────────────────────
+async function submitForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  const resultContent = document.getElementById('result-content');
+
+  btn.disabled = true;
+  btn.textContent = 'Assessing…';
+  resultContent.innerHTML = '<div class="spinner"></div>';
+
+  const data = Object.fromEntries(new FormData(e.target));
+
+  // cast numerics
+  ['loan_amount', 'term', 'property_value', 'income', 'ltv', 'dtir1'].forEach(k => {
+    data[k] = parseFloat(data[k]);
+  });
+  ['credit_score', 'year'].forEach(k => {
+    data[k] = parseInt(data[k]);
+  });
+
+  try {
+    const resp = await fetch(`${API}/predict/explain`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+      throw new Error(err.detail || `HTTP ${resp.status}`);
+    }
+
+    const result = await resp.json();
+    renderResult(result);
+    recordPrediction(result);
+
+  } catch (err) {
+    resultContent.innerHTML = `<div class="error-banner">Error: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Assess Risk & Get Recommendations';
+  }
+}
+
+// ──────────────────────────────────────────────
+// RENDER RESULT
+// ──────────────────────────────────────────────
+function renderResult(r) {
+  const pct = Math.round(r.default_probability * 100);
+  const riskClass = r.risk_level === 'Low' ? 'risk-low'
+                  : r.risk_level === 'Medium' ? 'risk-medium'
+                  : 'risk-high';
+
+  const gaugeColor = r.risk_level === 'Low' ? '#22c55e'
+                   : r.risk_level === 'Medium' ? '#f59e0b'
+                   : '#ef4444';
+
+  // SVG half-ring gauge (semi-circle)
+  const R = 58, cx = 70, cy = 68;
+  const circumference = Math.PI * R; // semi-circle arc length
+  const filled = circumference * (r.default_probability);
+  const dash = `${filled} ${circumference}`;
+  const gauge = `
+    <svg width="140" height="70" viewBox="0 0 140 70">
+      <path d="M 12 68 A 58 58 0 0 1 128 68" fill="none" stroke="#2e3145" stroke-width="10" stroke-linecap="round"/>
+      <path d="M 12 68 A 58 58 0 0 1 128 68" fill="none" stroke="${gaugeColor}"
+        stroke-width="10" stroke-linecap="round"
+        stroke-dasharray="${dash}" stroke-dashoffset="0"
+        style="transform-origin:70px 68px; transform:rotate(0deg);
+               transition: stroke-dasharray 0.6s ease; opacity:0.9"/>
+    </svg>`;
+
+  let cfHtml = '';
+  if (r.predicted_label === 0) {
+    cfHtml = '';
+  } else if (!r.counterfactuals_available || !r.counterfactuals || r.counterfactuals.length === 0) {
+    cfHtml = `
+      <hr class="divider">
+      <div class="cf-title">Restructuring Scenarios</div>
+      <div class="no-cf-msg">${r.message}</div>`;
+  } else {
+    const cards = r.counterfactuals.map(cf => {
+      const tags = Object.entries(cf.changes)
+        .map(([k, v]) => `<span class="cf-tag">${k}: ${v}</span>`)
+        .join('');
+      return `
+        <div class="cf-card">
+          <div class="cf-prob">After restructuring: ${Math.round(cf.predicted_probability_after * 100)}% default probability</div>
+          <div class="cf-desc">${cf.description}</div>
+          <div class="cf-changes">${tags}</div>
+        </div>`;
+    }).join('');
+    cfHtml = `
+      <hr class="divider">
+      <div class="cf-title">Restructuring Scenarios (${r.counterfactuals.length} found)</div>
+      ${cards}`;
+  }
+
+  document.getElementById('result-content').innerHTML = `
+    <div class="gauge-wrap">
+      <div class="gauge-ring">${gauge}<span class="gauge-label" style="color:${gaugeColor}">${pct}%</span></div>
+      <div class="gauge-sub">Default Probability</div>
+      <span class="risk-badge ${riskClass}">${r.risk_level} Risk</span>
+    </div>
+    <div class="result-msg">${r.message}</div>
+    ${cfHtml}
+    <div style="margin-top:14px; font-size:11px; color:var(--muted); text-align:right">
+      ID: ${r.request_id.slice(0, 8)}…
+    </div>`;
+}
+
+// ──────────────────────────────────────────────
+// RECORD PREDICTION FOR DASHBOARD TABLE
+// ──────────────────────────────────────────────
+function recordPrediction(r) {
+  predictions.unshift(r);
+  if (predictions.length > 20) predictions.pop();
+  renderPredTable();
+}
+
+function renderPredTable() {
+  const tbody = document.getElementById('pred-tbody');
+  if (predictions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-table">No predictions yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = predictions.map((r, i) => {
+    const pct = Math.round(r.default_probability * 100);
+    const riskClass = r.risk_level === 'Low' ? 'risk-low'
+                    : r.risk_level === 'Medium' ? 'risk-medium'
+                    : 'risk-high';
+    const label = r.predicted_label === 1
+      ? '<span style="color:var(--red)">Default</span>'
+      : '<span style="color:var(--green)">No default</span>';
+    const cfs = r.counterfactuals_available
+      ? `<span style="color:var(--green)">${r.counterfactuals?.length ?? 0}</span>`
+      : r.predicted_label === 1 ? '<span style="color:var(--muted)">none</span>' : '—';
+    return `<tr>
+      <td style="color:var(--muted)">${predictions.length - i}</td>
+      <td><span class="risk-badge ${riskClass}" style="font-size:11px">${pct}%</span></td>
+      <td>${r.risk_level}</td>
+      <td>${label}</td>
+      <td>${cfs}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ──────────────────────────────────────────────
+// DRIFT MONITORING
+// ──────────────────────────────────────────────
+async function checkDrift() {
+  const content = document.getElementById('drift-content');
+  content.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const resp = await fetch(`${API}/monitoring/drift`);
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+      throw new Error(err.detail || `HTTP ${resp.status}`);
+    }
+    const d = await resp.json();
+    renderDrift(d);
+  } catch (err) {
+    content.innerHTML = `<div class="error-banner">${err.message}</div>`;
+  }
+}
+
+function renderDrift(d) {
+  const statusColor = d.retrain_recommended ? 'var(--red)' : 'var(--green)';
+  const statusText = d.retrain_recommended ? '⚠ Retraining recommended' : '✓ No retraining needed';
+
+  const tags = d.drifted_features.length > 0
+    ? `<div class="drift-tags">${d.drifted_features.map(f => `<span class="drift-tag">${f}</span>`).join('')}</div>`
+    : '<span style="color:var(--green); font-size:13px;">No features drifted.</span>';
+
+  const reasons = d.trigger_reasons.length > 0
+    ? `<div style="margin-top:12px; font-size:13px; color:var(--red)">${d.trigger_reasons.join('<br>')}</div>`
+    : '';
+
+  document.getElementById('drift-content').innerHTML = `
+    <div style="font-size:14px; font-weight:600; color:${statusColor}; margin-bottom:16px">${statusText}</div>
+    <div class="drift-result">
+      <div class="drift-item">
+        <span class="drift-key">Requests analysed</span>
+        <span class="drift-val">${d.num_requests_analysed}</span>
+      </div>
+      <div class="drift-item">
+        <span class="drift-key">Drifted features</span>
+        <span class="drift-val">${d.drifted_features.length} / ${d.share_drifted_features !== null ? Math.round(d.share_drifted_features * 100) + '%' : '—'}</span>
+      </div>
+      <div class="drift-item">
+        <span class="drift-key">Predicted default rate</span>
+        <span class="drift-val">${(d.predicted_default_rate * 100).toFixed(1)}%</span>
+      </div>
+      <div class="drift-item">
+        <span class="drift-key">Reference default rate</span>
+        <span class="drift-val">${(d.reference_default_rate * 100).toFixed(1)}%</span>
+      </div>
+    </div>
+    ${tags}
+    ${reasons}`;
+}
+</script>
+</body>
+</html>
