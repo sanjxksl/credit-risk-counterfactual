@@ -165,10 +165,15 @@ credit-risk-counterfactual/
 │   │   ├── schemas.py       # Pydantic input/output validation
 │   │   ├── counterfactuals.py # DiCE integration
 │   │   └── monitoring.py    # Evidently drift detection + retraining trigger
+│   ├── frontend/
+│   │   └── index.html       # Loan application form + monitoring dashboard
 │   ├── Dockerfile
 │   ├── requirements.txt
 │   ├── sagemaker_deploy.py
 │   └── test_local.py
+├── databricks/
+│   ├── spark_eda.py         # Spark EDA + feature audit (Databricks)
+│   └── mlflow_training.py   # MLflow-tracked MLP + XGBoost training (Databricks)
 └── README.md
 ```
 
@@ -212,13 +217,13 @@ One case (predicted probability 0.94) returned no feasible counterfactuals. This
 
 ## Databricks Integration
 
-The `databricks/` folder contains two notebooks designed to run on Databricks Community Edition.
+The `databricks/` folder contains two notebooks that run on Databricks with Serverless compute and Unity Catalog.
 
-### 01_spark_eda.py — Spark EDA
+### spark_eda — Spark EDA
 
 Loads the full 148,670-row dataset with Spark and runs the categorical feature audit using `groupBy` aggregations. Identifies the five artifact features (EQUI bureau, 33-loan cluster) before any modelling.
 
-### 02_mlflow_training.py — MLflow Experiment Tracking
+### mlflow_training — MLflow Experiment Tracking
 
 Trains both MLP and XGBoost and logs every run to Databricks MLflow:
 
@@ -230,21 +235,32 @@ Trains both MLP and XGBoost and logs every run to Databricks MLflow:
 
 ### Setup
 
-```bash
-# 1. Upload data to DBFS (requires Databricks CLI: pip install databricks-cli)
-databricks fs cp data/cleaned_loan_data.csv dbfs:/FileStore/credit-risk/cleaned_loan_data.csv
-databricks fs cp data/train.csv             dbfs:/FileStore/credit-risk/train.csv
-databricks fs cp data/val.csv               dbfs:/FileStore/credit-risk/val.csv
-databricks fs cp data/test.csv              dbfs:/FileStore/credit-risk/test.csv
-databricks fs cp models/training_meta.json  dbfs:/FileStore/credit-risk/training_meta.json
+**1. Create a Unity Catalog Volume**
 
-# 2. Import notebooks into Databricks
-#    Workspace → Import → select databricks/01_spark_eda.py and 02_mlflow_training.py
+In Databricks: Catalog → `workspace` → Create Schema → `credit_risk` → Create Volume → `data`
 
-# 3. Install cluster libraries
-#    Compute → your cluster → Libraries → Install New → PyPI:
-#    torch, xgboost, scikit-learn==1.3.2
+Upload these files into the volume:
+- `data/train.csv`, `data/val.csv`, `data/test.csv`, `data/cleaned_loan_data.csv`
+- `models/training_meta.json`
+
+**2. Import notebooks**
+
+Workspace → your folder → Create → Import → URL:
 ```
+https://raw.githubusercontent.com/sanjxksl/credit-risk-counterfactual/main/databricks/spark_eda.py
+https://raw.githubusercontent.com/sanjxksl/credit-risk-counterfactual/main/databricks/mlflow_training.py
+```
+
+**3. Install libraries (Serverless)**
+
+Add this as the first cell in `mlflow_training` before running:
+```python
+%pip install xgboost scikit-learn==1.3.2
+```
+
+**4. Run**
+
+Run `spark_eda` first (no extra dependencies), then `mlflow_training`. After both complete, go to **Experiments → /credit-risk-experiments** to compare MLP vs XGBoost side by side.
 
 ---
 
