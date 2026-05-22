@@ -9,15 +9,14 @@
 # MAGIC Covers class distribution, feature statistics, and the categorical feature
 # MAGIC audit that identified five artifact features removed before modelling.
 # MAGIC
-# MAGIC **Before running:** upload `cleaned_loan_data.csv` to DBFS:
-# MAGIC ```
-# MAGIC databricks fs cp data/cleaned_loan_data.csv dbfs:/FileStore/credit-risk/cleaned_loan_data.csv
-# MAGIC ```
-# MAGIC Or drag-and-drop via Data → Add Data → DBFS in the UI.
+# MAGIC **Before running:** create a Unity Catalog Volume and upload your files:
+# MAGIC 1. Catalog → `workspace` → Create Schema → name it `credit_risk`
+# MAGIC 2. Inside `credit_risk` → Create Volume → name it `data`
+# MAGIC 3. Open the volume → Upload → select your CSV files
 
 # COMMAND ----------
 
-DATA_PATH = "dbfs:/FileStore/credit-risk/cleaned_loan_data.csv"
+DATA_PATH = "/Volumes/workspace/credit_risk/data/cleaned_loan_data.csv"
 
 df = (
     spark.read
@@ -183,7 +182,7 @@ for col_name, n_missing in sorted(missing.items(), key=lambda x: -x[1]):
 
 from pyspark.sql.functions import lit
 
-train_path = "dbfs:/FileStore/credit-risk/train.csv"
+train_path = "/Volumes/workspace/credit_risk/data/train.csv"
 train_df = spark.read.option("header", True).option("inferSchema", True).csv(train_path)
 
 n_pos = train_df.filter(col("status") == 1).count()

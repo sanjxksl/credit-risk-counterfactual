@@ -11,13 +11,10 @@
 # MAGIC - Tags for easy filtering in the Experiments UI
 # MAGIC
 # MAGIC **Before running:**
-# MAGIC 1. Upload processed splits to DBFS:
-# MAGIC    ```
-# MAGIC    databricks fs cp data/train.csv dbfs:/FileStore/credit-risk/train.csv
-# MAGIC    databricks fs cp data/val.csv   dbfs:/FileStore/credit-risk/val.csv
-# MAGIC    databricks fs cp data/test.csv  dbfs:/FileStore/credit-risk/test.csv
-# MAGIC    databricks fs cp models/training_meta.json dbfs:/FileStore/credit-risk/training_meta.json
-# MAGIC    ```
+# MAGIC 1. Create a Unity Catalog Volume and upload files:
+# MAGIC    - Catalog → `workspace` → Create Schema → `credit_risk`
+# MAGIC    - Inside `credit_risk` → Create Volume → `data`
+# MAGIC    - Upload: `train.csv`, `val.csv`, `test.csv`, `training_meta.json`
 # MAGIC 2. Install cluster libraries (Compute → your cluster → Libraries → Install New):
 # MAGIC    - PyPI: `torch` (CPU wheel), `xgboost`, `scikit-learn==1.3.2`
 
@@ -50,10 +47,10 @@ from torch.utils.data import DataLoader, TensorDataset
 from xgboost import XGBClassifier
 
 # DBFS paths — data uploaded in prerequisite step
-TRAIN_PATH = "/dbfs/FileStore/credit-risk/train.csv"
-VAL_PATH   = "/dbfs/FileStore/credit-risk/val.csv"
-TEST_PATH  = "/dbfs/FileStore/credit-risk/test.csv"
-META_PATH  = "/dbfs/FileStore/credit-risk/training_meta.json"
+TRAIN_PATH = "/Volumes/workspace/credit_risk/data/train.csv"
+VAL_PATH   = "/Volumes/workspace/credit_risk/data/val.csv"
+TEST_PATH  = "/Volumes/workspace/credit_risk/data/test.csv"
+META_PATH  = "/Volumes/workspace/credit_risk/data/training_meta.json"
 
 TARGET_COL   = "status"
 RANDOM_STATE = 42
