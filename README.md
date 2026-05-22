@@ -210,6 +210,44 @@ One case (predicted probability 0.94) returned no feasible counterfactuals. This
 
 ---
 
+## Databricks Integration
+
+The `databricks/` folder contains two notebooks designed to run on Databricks Community Edition.
+
+### 01_spark_eda.py — Spark EDA
+
+Loads the full 148,670-row dataset with Spark and runs the categorical feature audit using `groupBy` aggregations. Identifies the five artifact features (EQUI bureau, 33-loan cluster) before any modelling.
+
+### 02_mlflow_training.py — MLflow Experiment Tracking
+
+Trains both MLP and XGBoost and logs every run to Databricks MLflow:
+
+- **Per-epoch metrics** for the MLP: `val_auc_roc` and `train_loss` at each step, visible as a learning curve in the Experiments UI
+- **Final metrics** for both models: AUC-ROC, AUC-PR, Brier score (calibrated and uncalibrated), calibration gap
+- **Hyperparameters**: full parameter set logged for reproducibility
+- **Artifacts**: trained model + Platt calibrator saved as MLflow model artifacts
+- **Model Registry**: best model registered as `credit-risk-default-predictor`
+
+### Setup
+
+```bash
+# 1. Upload data to DBFS (requires Databricks CLI: pip install databricks-cli)
+databricks fs cp data/cleaned_loan_data.csv dbfs:/FileStore/credit-risk/cleaned_loan_data.csv
+databricks fs cp data/train.csv             dbfs:/FileStore/credit-risk/train.csv
+databricks fs cp data/val.csv               dbfs:/FileStore/credit-risk/val.csv
+databricks fs cp data/test.csv              dbfs:/FileStore/credit-risk/test.csv
+databricks fs cp models/training_meta.json  dbfs:/FileStore/credit-risk/training_meta.json
+
+# 2. Import notebooks into Databricks
+#    Workspace → Import → select databricks/01_spark_eda.py and 02_mlflow_training.py
+
+# 3. Install cluster libraries
+#    Compute → your cluster → Libraries → Install New → PyPI:
+#    torch, xgboost, scikit-learn==1.3.2
+```
+
+---
+
 ## References
 
 1. Mothilal et al. (2020). Explaining machine learning classifiers through diverse counterfactual explanations. *FAT\* 2020*.
