@@ -59,8 +59,9 @@ DEVICE = torch.device("cpu")  # Community Edition clusters are CPU-only
 torch.manual_seed(RANDOM_STATE)
 np.random.seed(RANDOM_STATE)
 
-mlflow.set_experiment("/credit-risk-experiments")
-print("MLflow tracking URI:", mlflow.get_tracking_uri())
+# On Databricks Serverless, MLflow is auto-configured — do NOT call
+# mlflow.set_tracking_uri("databricks"), it breaks the Spark config lookup.
+mlflow.set_experiment("credit-risk-experiments")
 
 # COMMAND ----------
 
@@ -334,7 +335,7 @@ with mlflow.start_run(run_name="xgboost-credit-risk") as run:
 
 # MAGIC %md ## Compare Runs in the MLflow UI
 # MAGIC
-# MAGIC Click **Experiments** in the left sidebar → select `/credit-risk-experiments`.
+# MAGIC Click **Experiments** in the left sidebar → select `credit-risk-experiments`.
 # MAGIC
 # MAGIC The table shows both runs side-by-side. Click **Chart** to plot metrics.
 # MAGIC Useful comparisons:
@@ -360,8 +361,10 @@ BEST_MODEL_KEY = "mlp_model"   # or "xgboost_model"
 
 model_uri = f"runs:/{BEST_RUN_ID}/{BEST_MODEL_KEY}"
 
+# Unity Catalog model registry requires catalog.schema.model_name format
+mlflow.set_registry_uri("databricks-uc")
 registered = mlflow.register_model(
     model_uri=model_uri,
-    name="credit-risk-default-predictor",
+    name="workspace.credit_risk.credit_risk_predictor",
 )
 print(f"Registered: {registered.name}  version {registered.version}")
